@@ -26,7 +26,7 @@ El aplicativo permitirá registrar y consultar calificaciones y asistencia de es
 
 - El catálogo incluye inicialmente: prueba parcial, proyecto, tarea, trabajo en clase, indagación y exposición, prueba corta y repositorio GitHub. **«Indagación y exposición» es una sola opción.**
 - El profesor dispone de un módulo para crear, consultar, editar y eliminar actividades del catálogo.
-- No se permiten dos actividades del catálogo con el mismo nombre, aunque difieran solo en mayúsculas y minúsculas. Por ejemplo, `Prueba parcial` y `prueba parcial` son duplicados.
+- No se permiten dos actividades del catálogo con el mismo nombre, aunque difieran solo en mayúsculas, minúsculas o tildes. Por ejemplo, `Prueba parcial`, `prueba parcial` y `Prúeba parcial` son duplicados.
 - La eliminación de un curso no elimina actividades del catálogo; estas se gestionan únicamente en este módulo.
 - Una actividad del catálogo queda bloqueada para edición y eliminación mientras esté asociada a un componente de evaluación.
 
@@ -93,7 +93,7 @@ El porcentaje y el puntaje del componente se distribuyen por igual entre sus act
 - Se documentan las instrucciones para levantar, detener y reconstruir el entorno, acceder al aplicativo y ejecutar las pruebas.
 - La carpeta de frontend utiliza Vite, React, Tailwind CSS y Motion. Las solicitudes al backend usan `fetch` nativo.
 - Se utiliza JavaScript, sin TypeScript, en el frontend.
-- La carpeta de backend contiene la aplicación de servidor con PHP, CodeIgniter y MySQL.
+- La carpeta `Backend/` contiene toda la aplicación de servidor con PHP, CodeIgniter y MySQL.
 - Las rutas de la API se protegen mediante JWT. La ruta de inicio de sesión es la excepción: acepta correo y contraseña sin JWT previo y, tras autenticar al usuario, entrega un token válido durante una hora. Al vencer el token, el backend deja de aceptar las solicitudes autenticadas y el frontend cierra la sesión del usuario.
 - Se evitan dependencias innecesarias. Las dependencias que se incorporen deben tener aceptación en la comunidad y una versión estable y segura.
 

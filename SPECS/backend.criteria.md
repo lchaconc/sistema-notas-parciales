@@ -2,9 +2,9 @@
 
 ## Alcance y uso
 
-Estos criterios convierten [backend.specs.md](backend.specs.md), [backend.tasks.md](backend.tasks.md), [database.specs.md](database.specs.md) y [general.md](general.md) en comprobaciones para aceptar la implementación futura. Los identificadores `BE-XX` permiten registrar evidencia de cada resultado. Los pasos entre paréntesis corresponden a la secuencia de `backend.tasks.md`.
+Estos criterios convierten [backend.specs.md](backend.specs.md), [backend.tasks.md](backend.tasks.md), [database.specs.md](database.specs.md) y [general.md](general.md) en comprobaciones para aceptar la implementación. Los identificadores `BE-XX` permiten registrar evidencia de cada resultado. Los pasos entre paréntesis corresponden a la secuencia de `backend.tasks.md`.
 
-**Estado actual:** este documento no autoriza implementar ni instalar dependencias. Los criterios se verificarán cuando el usuario autorice esa fase. El contrato concreto de rutas, métodos, respuestas y errores se definirá en la tarea 2; ningún criterio de este documento presupone nombres de rutas, códigos HTTP específicos o una librería determinada.
+**Estado actual:** el usuario autorizó implementar el backend y la base de datos. El contrato HTTP implementado se documenta en [backend.api.md](backend.api.md). Los criterios siguen siendo la referencia de aceptación funcional.
 
 ## Preparación y contrato (pasos 1 y 2)
 
@@ -18,7 +18,7 @@ Estos criterios convierten [backend.specs.md](backend.specs.md), [backend.tasks.
 
 - **BE-06 — Esquema reproducible.** Las migraciones crean las entidades, relaciones, índices únicos y campos decimales de `database.specs.md` en una base vacía sin intervención manual. **Evidencia:** prueba de integración con base limpia.
 - **BE-07 — Datos iniciales correctos.** `dominios_permitidos` contiene inicialmente `ucatolica.ac.cr` y el catálogo contiene las siete opciones acordadas; «indagación y exposición» ocupa un solo registro. No se inserta una cuenta de profesor con contraseña predeterminada. **Evidencia:** consulta de la base preparada por migraciones y datos iniciales.
-- **BE-08 — Reglas de comparación distintas.** El índice y la búsqueda de correos distinguen `Persona@ucatolica.ac.cr` de `persona@ucatolica.ac.cr`, mientras que el nombre del catálogo rechaza `Prueba parcial` si ya existe `prueba parcial`. **Evidencia:** pruebas de integración que comprueban inserción y búsqueda.
+- **BE-08 — Reglas de comparación distintas.** El índice y la búsqueda de correos distinguen `Persona@ucatolica.ac.cr` de `persona@ucatolica.ac.cr`, mientras que el nombre del catálogo rechaza `Prueba parcial` si ya existe `prueba parcial` o `Prúeba parcial`. **Evidencia:** pruebas de integración que comprueban inserción y búsqueda.
 - **BE-09 — Integridad entre entidades.** Las relaciones impiden registros huérfanos; una calificación solo une una matrícula con una actividad de su curso y una asistencia solo une una matrícula con una sesión de su curso. **Evidencia:** pruebas de integración y rechazos de asociaciones entre cursos.
 
 ## Identidad y autorización (paso 4)
@@ -33,7 +33,7 @@ Estos criterios convierten [backend.specs.md](backend.specs.md), [backend.tasks.
 
 - **BE-15 — Cuatrimestre válido.** Se registra con código `N-AAAA`, `N` entre 1 y 3, y fechas de inicio y cierre válidas; el inicio no es posterior al cierre. Sus cursos consultan las mismas fechas. **Evidencia:** pruebas de API y de integración con límites y entradas inválidas.
 - **BE-16 — Identidad del curso y grupo.** Dos cursos del mismo cuatrimestre pueden compartir código si sus números de grupo difieren. Se rechaza repetir cuatrimestre, código y grupo; las consultas de un grupo no incluyen datos de otro. **Evidencia:** pruebas de integración y API con dos grupos y cuatrimestres distintos.
-- **BE-17 — Catálogo gestionable.** El profesor puede crear, consultar, editar y eliminar opciones no vinculadas. La creación o el cambio de nombre se rechaza si duplica otro nombre aunque solo varíen mayúsculas y minúsculas. **Evidencia:** pruebas de API y de unicidad en MySQL.
+- **BE-17 — Catálogo gestionable.** El profesor puede crear, consultar, editar y eliminar opciones no vinculadas. La creación o el cambio de nombre se rechaza si duplica otro nombre aunque solo varíen mayúsculas, minúsculas o tildes. **Evidencia:** pruebas de API y de unicidad en MySQL.
 - **BE-18 — Catálogo vinculado protegido.** Una actividad usada en cualquier componente no puede editarse ni eliminarse. **Evidencia:** pruebas con actividad libre y vinculada, antes y después de intentar ambas operaciones.
 
 ## Componentes y reparto (paso 6)

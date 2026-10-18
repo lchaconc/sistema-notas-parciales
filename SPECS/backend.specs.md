@@ -70,7 +70,7 @@ La siguiente tabla define relaciones funcionales. No prescribe nombres de tablas
 
 - El catálogo inicial contiene: prueba parcial, proyecto, tarea, trabajo en clase, indagación y exposición, prueba corta y repositorio GitHub. **Indagación y exposición** es una sola opción.
 - El profesor puede crear, consultar, editar y eliminar opciones del catálogo.
-- Rechazar la creación o el cambio de nombre de una actividad si ya existe otra con ese mismo nombre, sin distinguir mayúsculas y minúsculas. Por ejemplo, `Prueba parcial` y `prueba parcial` son duplicados.
+- Rechazar la creación o el cambio de nombre de una actividad si ya existe otra con ese mismo nombre, sin distinguir mayúsculas, minúsculas ni tildes. Por ejemplo, `Prueba parcial`, `prueba parcial` y `Prúeba parcial` son duplicados.
 - Impedir la edición o eliminación de una opción mientras esté asociada a cualquier componente de evaluación. Eliminar un curso no elimina su opción del catálogo.
 
 ### Componentes de evaluación
@@ -139,7 +139,7 @@ La siguiente tabla define relaciones funcionales. No prescribe nombres de tablas
 - Un JWT vencido después de una hora no permite acceder a rutas protegidas.
 - Un correo ajeno a los dominios de `dominios_permitidos` se rechaza al crear la cuenta del profesor o matricular a un estudiante.
 - Dos correos que solo difieren en mayúsculas y minúsculas se tratan como direcciones distintas al aplicar la unicidad.
-- Un componente admite porcentaje y puntaje total con hasta dos decimales; la creación de una actividad con nombre ya presente en el catálogo se rechaza aunque cambie el uso de mayúsculas y minúsculas.
+- Un componente admite porcentaje y puntaje total con hasta dos decimales; la creación de una actividad con nombre ya presente en el catálogo se rechaza aunque cambie el uso de mayúsculas, minúsculas o tildes.
 - Se rechaza crear una sesión de asistencia con fecha fuera del intervalo inclusivo del cuatrimestre del curso.
 - Una dirección de correo asignada al profesor no se acepta para un estudiante, ni una dirección de estudiante para crear la cuenta del profesor.
 - No se guarda una segunda sesión de asistencia con la misma fecha para un mismo curso, ni una sesión sin condición para alguno de los estudiantes matriculados incluidos en ella.

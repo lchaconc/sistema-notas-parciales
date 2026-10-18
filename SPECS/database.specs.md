@@ -50,7 +50,7 @@ erDiagram
 - Las fechas de cuatrimestre y asistencia son fechas de calendario. El formato visible del cuatrimestre sigue siendo `N-AAAA`.
 - Las columnas de nota, porcentaje y puntaje se almacenan como `DECIMAL`. Los valores ingresados para el componente y los asignados a una actividad individual admiten hasta dos decimales.
 - El porcentaje total y el puntaje total de un componente admiten hasta dos decimales. Se propone `DECIMAL(5,2)` para ambos, junto con las validaciones de rango correspondientes.
-- La unicidad de `usuarios.correo` distingue mayúsculas de minúsculas. En cambio, la unicidad de `catalogo_actividades.nombre` no las distingue. La configuración de comparación de MySQL para cada columna debe respetar su regla correspondiente.
+- La unicidad de `usuarios.correo` distingue mayúsculas de minúsculas. En cambio, la unicidad de `catalogo_actividades.nombre` no distingue mayúsculas, minúsculas ni tildes. La configuración de comparación de MySQL para cada columna debe respetar su regla correspondiente.
 - En la siguiente tabla, **obligatorio** significa que el dato debe existir al crear ese registro; **opcional** permite que aún no se haya registrado.
 
 ## Diccionario de tablas
@@ -62,7 +62,7 @@ erDiagram
 | `estudiantes` | `usuario_id` entero; `nombre`, `primer_apellido` y `segundo_apellido` textos obligatorios. | PK y FK `usuario_id` → `usuarios.id`. El usuario referido debe tener rol estudiante. |
 | `cuatrimestres` | `id` entero; `codigo` texto obligatorio en formato `N-AAAA`; `fecha_inicio` y `fecha_cierre` fechas obligatorias. | PK `id`; `codigo` único; el número `N` está entre 1 y 3; la fecha de inicio no puede ser posterior a la de cierre. Sus fechas son comunes a todos sus cursos. |
 | `cursos` | `id` entero; `cuatrimestre_id` entero; `nombre` y `codigo` textos obligatorios; `numero_grupo` entero obligatorio. | PK `id`; FK `cuatrimestre_id` → `cuatrimestres.id`; combinación única (`cuatrimestre_id`, `codigo`, `numero_grupo`). |
-| `catalogo_actividades` | `id` entero; `nombre` texto obligatorio. | PK `id`; `nombre` único sin distinguir mayúsculas y minúsculas. Una actividad referida por un componente no se puede editar ni eliminar. Los valores iniciales se enumeran más adelante. |
+| `catalogo_actividades` | `id` entero; `nombre` texto obligatorio. | PK `id`; `nombre` único sin distinguir mayúsculas, minúsculas ni tildes. Una actividad referida por un componente no se puede editar ni eliminar. Los valores iniciales se enumeran más adelante. |
 | `componentes_evaluacion` | `id` entero; `curso_id` y `actividad_catalogo_id` enteros; `titulo` texto obligatorio; `cantidad_actividades` entero; `descripcion` texto; `porcentaje_total` y `puntaje_total` `DECIMAL(5,2)`. | PK `id`; FK a `cursos` y `catalogo_actividades`. Título de máximo 128 palabras; descripción de máximo 256 caracteres; cantidad entre 1 y 15; puntaje entre 5 y 100; porcentaje y puntaje con hasta dos decimales; suma de porcentajes del curso ≤ 100 %. |
 | `actividades_individuales` | `id` entero; `componente_id` entero; `numero` entero; `porcentaje_asignado` y `puntaje_asignado` decimales de dos cifras. | PK `id`; FK `componente_id` → `componentes_evaluacion.id`; combinación única (`componente_id`, `numero`). Hay exactamente `cantidad_actividades` registros, numerados dentro del componente. |
 | `matriculas` | `id` entero; `estudiante_id` y `curso_id` enteros. | PK `id`; FK `estudiante_id` → `estudiantes.usuario_id`; FK `curso_id` → `cursos.id`; combinación única (`estudiante_id`, `curso_id`). |
@@ -95,7 +95,7 @@ El campo `descripcion` admite hasta 256 caracteres y `observacion` hasta 125; si
 - Un curso solo se elimina tras la fecha de cierre del cuatrimestre y la confirmación previa del profesor. Al borrarlo desaparecen sus componentes y actividades individuales, matrículas, calificaciones, sesiones y asistencias. Esta operación debe ser atómica para evitar registros huérfanos.
 - La eliminación de un curso no elimina su cuatrimestre, estudiantes ni actividades del catálogo. Las relaciones hacia `cuatrimestres`, `estudiantes` y `catalogo_actividades` no deben provocar borrados de esos registros compartidos.
 - La referencia desde `componentes_evaluacion` impide eliminar una actividad del catálogo en uso. El backend también impide editarla mientras exista esa referencia.
-- `catalogo_actividades.nombre` no admite duplicados aunque los nombres solo difieran en mayúsculas y minúsculas. La base de datos y el backend deben aplicar la misma comparación de nombres. Por ejemplo, `Prueba parcial` y `prueba parcial` son duplicados.
+- `catalogo_actividades.nombre` no admite duplicados aunque los nombres solo difieran en mayúsculas, minúsculas o tildes. La base de datos y el backend deben aplicar la misma comparación de nombres. Por ejemplo, `Prueba parcial`, `prueba parcial` y `Prúeba parcial` son duplicados.
 
 ### Evaluación
 
@@ -127,5 +127,5 @@ Las observaciones se consultan para las tarjetas del estudiante, aunque no figur
 
 ## Índices propuestos
 
-- Únicos: `usuarios(correo)` con distinción de mayúsculas y minúsculas, `dominios_permitidos(dominio)`, `cuatrimestres(codigo)`, `cursos(cuatrimestre_id, codigo, numero_grupo)`, `catalogo_actividades(nombre)` sin distinción de mayúsculas y minúsculas, `matriculas(estudiante_id, curso_id)`, `actividades_individuales(componente_id, numero)`, `calificaciones(matricula_id, actividad_individual_id)`, `sesiones_asistencia(curso_id, fecha)` y `asistencias(sesion_id, matricula_id)`.
+- Únicos: `usuarios(correo)` con distinción de mayúsculas y minúsculas, `dominios_permitidos(dominio)`, `cuatrimestres(codigo)`, `cursos(cuatrimestre_id, codigo, numero_grupo)`, `catalogo_actividades(nombre)` sin distinción de mayúsculas, minúsculas ni tildes, `matriculas(estudiante_id, curso_id)`, `actividades_individuales(componente_id, numero)`, `calificaciones(matricula_id, actividad_individual_id)`, `sesiones_asistencia(curso_id, fecha)` y `asistencias(sesion_id, matricula_id)`.
 - Para consultas frecuentes: claves foráneas de cursos por cuatrimestre, componentes por curso y actividad del catálogo, matrículas por curso, actividades por componente, sesiones por curso y calificaciones/asistencias por matrícula. Los índices redundantes con los únicos anteriores deben omitirse al concretar las migraciones.

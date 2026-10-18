@@ -9,3 +9,14 @@
 !.env.*.example
 !*.env.example
 !*.env.*.example
+
+# Dependencias y artefactos generados en contenedores.
+Backend/vendor/
+Backend/writable/
+frontend/node_modules/
+frontend/dist/
+
+# Archivos locales del editor y del sistema operativo.
+.idea/
+.vscode/
+.DS_Store

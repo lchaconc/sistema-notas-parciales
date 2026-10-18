@@ -2,20 +2,21 @@
 
 ## Estado actual del trabajo
 
-- Trabaja únicamente en el análisis y la documentación de requisitos. No implementes funcionalidades, no escribas código y no instales dependencias hasta que el usuario autorice expresamente pasar a la implementación.
+- El usuario autorizó la implementación del backend y la base de datos. En `frontend/` solo se permite instalar y mantener la plantilla base de Vite, React, Tailwind CSS y Motion dentro de Docker. No implementes pantallas, componentes del aplicativo, flujos, llamadas a la API ni lógica del cliente hasta que el usuario lo indique expresamente.
 - Al iniciar cada sesión de trabajo, localiza y lee todos los archivos `.md` propios del proyecto, incluidos los de la raíz y `SPECS/`, antes de planificar o modificar cualquier cosa. Comprueba también los cambios existentes en el repositorio para no sobrescribir trabajo previo.
 - Trata esos archivos `.md` como la única fuente de verdad vigente para requisitos, diseño, tareas, criterios de aceptación y restricciones del proyecto. `SPECS/requerimientos-iniciales.docx` es un antecedente histórico ya incorporado a las especificaciones Markdown; no lo uses para sustituir o contradecir las decisiones documentadas en `.md`.
 - Si dos archivos `.md` se contradicen o falta un criterio necesario, identifica la discrepancia y solicita el criterio del usuario antes de convertir una interpretación en requisito confirmado. Mantén coherentes los documentos relacionados cuando el usuario resuelva una decisión.
 - No inventes requisitos, reglas de negocio, flujos, límites, pantallas, contratos de API ni decisiones técnicas. Identifica cualquier ambigüedad, omisión o contradicción y pide el criterio del usuario antes de convertir una interpretación en requisito confirmado.
 - Mantén visibles en la especificación las decisiones pendientes y actualízalas cuando el usuario proporcione su criterio.
 
-## Stack obligatorio cuando se autorice la implementación
+## Stack obligatorio para la implementación
 
 - Organiza la solución como monorepositorio y trabaja todo el proyecto dentro de un entorno Docker: frontend, backend y MySQL deben poder levantarse y comunicarse mediante sus contenedores.
 - Al iniciar la implementación, prepara y configura primero el entorno Docker hasta poder levantarlo y usarlo. Solo después desarrolla los módulos del backend y del frontend sobre ese entorno. Ejecuta allí los comandos del proyecto, las migraciones, el comando de creación del profesor y las pruebas; no dependas de instalaciones locales del stack para trabajar en el aplicativo.
 - Documenta cómo levantar, detener y reconstruir el entorno, cómo acceder a frontend y API, y cómo ejecutar las pruebas dentro de Docker. Comprueba el arranque y la comunicación entre servicios antes de continuar con las funcionalidades.
 - **Frontend:** carpeta independiente con Vite, React, Tailwind CSS y Motion. Usa JavaScript; no uses TypeScript. Consume la API del backend con `fetch` nativo.
-- **Backend:** carpeta independiente con PHP, CodeIgniter y MySQL. Su única función de interfaz es ofrecer una API al frontend; no construyas vistas de servidor para el aplicativo.
+- **Backend:** toda la aplicación PHP/CodeIgniter reside en `Backend/` y usa MySQL. Su única función de interfaz es ofrecer una API al frontend; no construyas vistas de servidor para el aplicativo.
+- **Documentación de API:** mantén `API-DOCS/openapi.yaml` alineado con todas las rutas de `Backend/app/Config/Routes.php`. Swagger UI corre en un contenedor independiente y no constituye implementación del cliente en `frontend/`.
 - Almacena las contraseñas únicamente como hashes en la base de datos, tanto al generarlas como al cambiarlas. Nunca guardes la contraseña en texto claro.
 - El único profesor debe tener una cuenta con correo y contraseña almacenada como hash. Crea esa cuenta una sola vez mediante un comando de consola de CodeIgniter; no generes cuentas de profesor adicionales.
 - Protege las rutas de la API mediante JWT. La ruta de inicio de sesión es la excepción acordada: recibe correo y contraseña sin JWT previo y entrega un token después de autenticar al usuario. Solicita el criterio del usuario antes de añadir cualquier otra ruta pública.

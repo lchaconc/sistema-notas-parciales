@@ -1,0 +1,4 @@
+@import "tailwindcss";
+
+body { font-family: system-ui, sans-serif; }
+main { max-width: 48rem; margin: 5rem auto; padding: 1.5rem; }

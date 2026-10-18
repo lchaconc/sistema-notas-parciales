@@ -2,7 +2,7 @@
 
 ## Alcance y fuentes
 
-Este plan ordena el trabajo futuro del backend según [general.md](general.md), [backend.specs.md](backend.specs.md), [database.specs.md](database.specs.md) y [AGENTS.md](../AGENTS.md). **Es planificación; no autoriza todavía a escribir código ni instalar dependencias.** Cada paso incluye las pruebas que deben ejecutarse al implementarlo. No se fijan aquí rutas HTTP, formatos de respuesta ni librerías que las especificaciones aún no han definido.
+Este plan ordena la implementación del backend según [general.md](general.md), [backend.specs.md](backend.specs.md), [database.specs.md](database.specs.md) y [AGENTS.md](../AGENTS.md). El usuario ya autorizó implementar el backend y la base de datos. Cada paso incluye las pruebas que deben ejecutarse al implementarlo. El contrato HTTP concreto se documenta en [backend.api.md](backend.api.md).
 
 ## Secuencia de trabajo
 
@@ -23,7 +23,7 @@ Este plan ordena el trabajo futuro del backend según [general.md](general.md), 
 ### 3. Crear el esquema relacional y sus datos iniciales
 
 - Convertir `database.specs.md` en migraciones de MySQL: usuarios, estudiantes, dominios permitidos, cuatrimestres, cursos, catálogo, componentes, actividades individuales, matrículas, calificaciones, sesiones y asistencias.
-- Establecer claves foráneas, índices únicos y precisión decimal. Configurar la unicidad del correo distinguiendo mayúsculas y la del nombre del catálogo sin distinguirlas. Cargar el dominio `ucatolica.ac.cr` y las actividades iniciales; no crear una contraseña fija para el profesor.
+- Establecer claves foráneas, índices únicos y precisión decimal. Configurar la unicidad del correo distinguiendo mayúsculas y la del nombre del catálogo sin distinguir mayúsculas ni tildes. Cargar el dominio `ucatolica.ac.cr` y las actividades iniciales; no crear una contraseña fija para el profesor.
 - Definir cómo se aplican las restricciones que requieren varias tablas o filas mediante servicios y transacciones, además de las restricciones de la base de datos.
 - **Pruebas de integración:** ejecutar migraciones y datos iniciales sobre una base limpia; comprobar relaciones, precisión, duplicados, comparación de correos y nombres, y que el esquema pueda prepararse nuevamente para otra ejecución de pruebas.
 
@@ -39,7 +39,7 @@ Este plan ordena el trabajo futuro del backend según [general.md](general.md), 
 - Registrar y consultar cuatrimestres con código `N-AAAA` y fechas compartidas; crear y consultar cursos identificados por cuatrimestre, código y número de grupo.
 - Implementar el CRUD del catálogo, su carga inicial y el bloqueo de edición y eliminación mientras una actividad esté vinculada a un componente.
 - Posponer la eliminación del curso hasta el paso 10, cuando ya existan todas las relaciones que debe limpiar.
-- **Pruebas de integración y API:** formatos y fechas válidos; grupos con código repetido sin mezclar datos; rechazo de combinaciones duplicadas; nombres del catálogo repetidos con distinto uso de mayúsculas; bloqueo de actividades en uso.
+- **Pruebas de integración y API:** formatos y fechas válidos; grupos con código repetido sin mezclar datos; rechazo de combinaciones duplicadas; nombres del catálogo repetidos con distinto uso de mayúsculas o tildes; bloqueo de actividades en uso.
 
 ### 6. Implementar componentes y distribución de actividades
 
