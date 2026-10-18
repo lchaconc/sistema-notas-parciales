@@ -1,0 +1,11 @@
+# Archivos locales de variables de entorno, también en subcarpetas.
+.env
+.env.*
+*.env
+*.env.*
+
+# Plantillas sin secretos que pueden versionarse.
+!.env.example
+!.env.*.example
+!*.env.example
+!*.env.*.example

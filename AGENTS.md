@@ -3,13 +3,17 @@
 ## Estado actual del trabajo
 
 - Trabaja únicamente en el análisis y la documentación de requisitos. No implementes funcionalidades, no escribas código y no instales dependencias hasta que el usuario autorice expresamente pasar a la implementación.
-- Usa `SPECS/requerimientos-iniciales.docx` como fuente de los requisitos iniciales y `SPECS/general.md` como especificación general actualizada. Las decisiones posteriores del usuario recogidas en `SPECS/general.md` prevalecen sobre el documento inicial; solicita aclaración si aparece una contradicción que esas decisiones no resuelven.
+- Al iniciar cada sesión de trabajo, localiza y lee todos los archivos `.md` propios del proyecto, incluidos los de la raíz y `SPECS/`, antes de planificar o modificar cualquier cosa. Comprueba también los cambios existentes en el repositorio para no sobrescribir trabajo previo.
+- Trata esos archivos `.md` como la única fuente de verdad vigente para requisitos, diseño, tareas, criterios de aceptación y restricciones del proyecto. `SPECS/requerimientos-iniciales.docx` es un antecedente histórico ya incorporado a las especificaciones Markdown; no lo uses para sustituir o contradecir las decisiones documentadas en `.md`.
+- Si dos archivos `.md` se contradicen o falta un criterio necesario, identifica la discrepancia y solicita el criterio del usuario antes de convertir una interpretación en requisito confirmado. Mantén coherentes los documentos relacionados cuando el usuario resuelva una decisión.
 - No inventes requisitos, reglas de negocio, flujos, límites, pantallas, contratos de API ni decisiones técnicas. Identifica cualquier ambigüedad, omisión o contradicción y pide el criterio del usuario antes de convertir una interpretación en requisito confirmado.
 - Mantén visibles en la especificación las decisiones pendientes y actualízalas cuando el usuario proporcione su criterio.
 
 ## Stack obligatorio cuando se autorice la implementación
 
-- Organiza la solución como monorepositorio y ejecútala mediante contenedores Docker.
+- Organiza la solución como monorepositorio y trabaja todo el proyecto dentro de un entorno Docker: frontend, backend y MySQL deben poder levantarse y comunicarse mediante sus contenedores.
+- Al iniciar la implementación, prepara y configura primero el entorno Docker hasta poder levantarlo y usarlo. Solo después desarrolla los módulos del backend y del frontend sobre ese entorno. Ejecuta allí los comandos del proyecto, las migraciones, el comando de creación del profesor y las pruebas; no dependas de instalaciones locales del stack para trabajar en el aplicativo.
+- Documenta cómo levantar, detener y reconstruir el entorno, cómo acceder a frontend y API, y cómo ejecutar las pruebas dentro de Docker. Comprueba el arranque y la comunicación entre servicios antes de continuar con las funcionalidades.
 - **Frontend:** carpeta independiente con Vite, React, Tailwind CSS y Motion. Usa JavaScript; no uses TypeScript. Consume la API del backend con `fetch` nativo.
 - **Backend:** carpeta independiente con PHP, CodeIgniter y MySQL. Su única función de interfaz es ofrecer una API al frontend; no construyas vistas de servidor para el aplicativo.
 - Almacena las contraseñas únicamente como hashes en la base de datos, tanto al generarlas como al cambiarlas. Nunca guardes la contraseña en texto claro.
@@ -21,6 +25,12 @@
 
 - No instales librerías o módulos innecesarios. Antes de añadir una dependencia, justifica la necesidad concreta que no cubren el stack o las herramientas existentes.
 - Cuando se autorice instalar dependencias, comprueba que sus versiones sean estables, estén actualizadas, tengan mantenimiento y sean aceptadas por la comunidad. Verifica su compatibilidad con el resto del stack y evita versiones con problemas de seguridad conocidos.
+
+## Variables de entorno y secretos
+
+- Cuando se autorice la implementación, usa variables de entorno para la configuración que cambie entre entornos y para los secretos, como las credenciales de la base de datos y la clave de firma de JWT. No incluyas valores secretos en el código ni en archivos versionados.
+- Mantén los archivos de entorno locales fuera de Git mediante el `.gitignore` del repositorio, también si se crean dentro de las carpetas de frontend o backend. Antes de publicar cambios, comprueba que ningún archivo con secretos esté preparado para commit.
+- Si se necesita documentar la configuración, usa archivos de ejemplo sin credenciales reales. No expongas secretos del backend en el frontend.
 
 ## Organización y responsabilidades
 
