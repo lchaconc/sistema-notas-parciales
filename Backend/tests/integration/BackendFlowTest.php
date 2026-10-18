@@ -35,6 +35,17 @@ final class BackendFlowTest extends CIUnitTestCase
         parent::tearDown();
     }
 
+    public function testPublicHealthEndpointChecksMySql(): void
+    {
+        $response = $this->get('api/healt');
+        $response->assertStatus(200);
+        $this->assertSame(
+            ['data' => ['servidor' => 'ok', 'base_datos' => 'ok']],
+            json_decode($response->getJSON(), true)
+        );
+        $this->jsonRequest('GET', 'api/profesor/cursos')->assertStatus(401);
+    }
+
     public function testAuthenticationAndRoleIsolation(): void
     {
         $this->assertSame('snp_test', $this->testDb->database);

@@ -89,12 +89,13 @@ El porcentaje y el puntaje del componente se distribuyen por igual entre sus act
 ## Restricciones técnicas indicadas
 
 - La solución se organiza como un monorepositorio y todo el desarrollo y la ejecución del aplicativo se realizan en un entorno Docker que incluye frontend, backend y MySQL.
+- MySQL de desarrollo se puede consultar desde DBeaver en Windows mediante un puerto del contenedor publicado únicamente en `127.0.0.1` del anfitrión (predeterminado `3307`, configurable con `MYSQL_HOST_PORT`). El contenedor de la base de pruebas no publica ningún puerto. Las credenciales se toman del `.env` local ignorado por Git.
 - El primer trabajo de implementación es preparar y configurar ese entorno para levantar los servicios y comprobar su comunicación. Después se desarrollan las funcionalidades y se ejecutan dentro de Docker los comandos del proyecto, las migraciones y las pruebas, sin requerir instalaciones locales del stack.
 - Se documentan las instrucciones para levantar, detener y reconstruir el entorno, acceder al aplicativo y ejecutar las pruebas.
 - La carpeta de frontend utiliza Vite, React, Tailwind CSS y Motion. Las solicitudes al backend usan `fetch` nativo.
 - Se utiliza JavaScript, sin TypeScript, en el frontend.
 - La carpeta `Backend/` contiene toda la aplicación de servidor con PHP, CodeIgniter y MySQL.
-- Las rutas de la API se protegen mediante JWT. La ruta de inicio de sesión es la excepción: acepta correo y contraseña sin JWT previo y, tras autenticar al usuario, entrega un token válido durante una hora. Al vencer el token, el backend deja de aceptar las solicitudes autenticadas y el frontend cierra la sesión del usuario.
+- Las rutas de la API se protegen mediante JWT, con dos excepciones públicas: `POST /api/login` acepta correo y contraseña sin JWT previo y entrega un token válido durante una hora tras autenticar; `GET /api/healt` verifica que el servidor responde y que puede consultar MySQL, sin JWT. Si la base de datos no responde, esta última ruta devuelve un estado de servicio no disponible sin exponer credenciales ni detalles internos. Al vencer el token, el backend deja de aceptar las solicitudes autenticadas y el frontend cierra la sesión del usuario.
 - Se evitan dependencias innecesarias. Las dependencias que se incorporen deben tener aceptación en la comunidad y una versión estable y segura.
 
 ## Pruebas durante la implementación

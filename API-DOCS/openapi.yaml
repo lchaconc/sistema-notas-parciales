@@ -8,7 +8,7 @@ info:
   description: |
     Contrato de las rutas implementadas en `Backend/app/Config/Routes.php`.
     Todas las respuestas JSON exitosas usan `{ "data": ... }` y los errores
-    controlados usan `{ "error": "motivo" }`. Solo el inicio de sesión es público.
+    controlados usan `{ "error": "motivo" }`. Solo `/login` y `/healt` son públicos.
     Los importes decimales devueltos por la API son cadenas con dos cifras
     decimales. El profesor se crea una vez con `php spark profesor:crear`;
     ese comando no es una ruta HTTP.
@@ -16,6 +16,8 @@ servers:
   - url: /api
     description: Proxy local de Swagger UI hacia el backend
 tags:
+  - name: Salud
+    description: Disponibilidad de la API y conexión a MySQL.
   - name: Autenticación
     description: Inicio de sesión y contraseñas.
   - name: Cuatrimestres y cursos
@@ -35,6 +37,16 @@ tags:
 security:
   - bearerAuth: []
 paths:
+  /healt:
+    get:
+      tags: [Salud]
+      summary: Comprobar servidor y base de datos
+      description: Ruta pública que ejecuta `SELECT 1` en MySQL. No expone credenciales ni detalles de conexión.
+      operationId: checkHealth
+      security: []
+      responses:
+        '200': { $ref: '#/components/responses/Health' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
   /login:
     post:
       tags: [Autenticación]
@@ -480,6 +492,12 @@ components:
       required: true
       schema: { type: integer, minimum: 1 }
   schemas:
+    HealthData:
+      type: object
+      required: [servidor, base_datos]
+      properties:
+        servidor: { type: string, enum: [ok] }
+        base_datos: { type: string, enum: [ok] }
     Error:
       type: object
       required: [error]
@@ -803,6 +821,20 @@ components:
         fecha: { type: string, format: date }
         condicion: { type: string, enum: [presente, ausente, justificado] }
   responses:
+    Health:
+      description: La API responde y la consulta a MySQL funciona.
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [data]
+            properties:
+              data: { $ref: '#/components/schemas/HealthData' }
+    ServiceUnavailable:
+      description: MySQL no responde o la consulta de comprobación falló; no se revelan detalles internos.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
     BadRequest:
       description: Formato, límite, fecha o dato obligatorio inválido.
       content:

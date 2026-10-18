@@ -9,7 +9,21 @@ Backend API en CodeIgniter 4, MySQL y plantilla base de frontend en React/Vite, 
 3. Prepare el esquema y los datos iniciales: `docker compose exec backend php spark migrate` y `docker compose exec backend php spark db:seed InitialDataSeeder`.
 4. Cree la única cuenta de profesor en una terminal interactiva: `docker compose exec -it backend php spark profesor:crear profesor@ucatolica.ac.cr`. El comando solicita la contraseña sin mostrarla.
 
-El backend escucha en `http://localhost:8080`, la plantilla del frontend en `http://localhost:5173` y Swagger UI en `http://localhost:8081`. Vite envía las solicitudes `/api` al backend. El inicio de sesión es `POST /api/login` con `correo` y `contrasena`; devuelve un JWT válido durante una hora. Las demás rutas de la API exigen el token Bearer y el rol correspondiente. El contrato OpenAPI y su verificación están en [API-DOCS](API-DOCS/README.md).
+El backend escucha en `http://localhost:8080`, la plantilla del frontend en `http://localhost:5173` y Swagger UI en `http://localhost:8081`. Vite envía las solicitudes `/api` al backend. El inicio de sesión es `POST /api/login` con `correo` y `contrasena`; devuelve un JWT válido durante una hora. `GET /api/healt` es público y comprueba el servidor y MySQL (`200` disponible, `503` si falla la base). Las demás rutas de la API exigen el token Bearer y el rol correspondiente. El contrato OpenAPI y su verificación están en [API-DOCS](API-DOCS/README.md).
+
+## Conectar DBeaver a MySQL desde Windows
+
+En DBeaver, cree una conexión **MySQL** (tipo TCP/IP) con estos valores:
+
+| Campo | Valor |
+| --- | --- |
+| Host | `127.0.0.1` |
+| Puerto | `3307` por defecto; si se define `MYSQL_HOST_PORT` en `.env`, use ese valor |
+| Base de datos | El valor `MYSQL_DATABASE` de `.env` (`snp` por defecto) |
+| Usuario | El valor `MYSQL_USER` de `.env` (`snp` por defecto) |
+| Contraseña | El valor `MYSQL_PASSWORD` de `.env` |
+
+Después de `docker compose up -d db backend`, use **Probar conexión** en DBeaver. Si solicita un controlador MySQL, permita que DBeaver lo instale. La contraseña de MySQL no es la contraseña del profesor. El puerto está disponible solo en este equipo; `db_test` no se expone. Dentro de Docker, el backend continúa usando `db:3306`. Si `3307` ya está ocupado, agregue `MYSQL_HOST_PORT` con otro puerto libre en `.env` y vuelva a ejecutar `docker compose up -d db backend`.
 
 ## Pruebas
 

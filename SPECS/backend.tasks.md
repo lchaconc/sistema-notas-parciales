@@ -10,13 +10,14 @@ Este plan ordena la implementación del backend según [general.md](general.md),
 
 - Cuando se autorice la implementación, configurar primero los contenedores de frontend, backend y MySQL para que puedan levantarse y comunicarse dentro del monorepositorio. Preparar la estructura inicial necesaria para comprobar los tres servicios antes de desarrollar funcionalidades.
 - Definir las variables de entorno necesarias, archivos de ejemplo sin secretos y exclusiones en `.gitignore`. Preparar una base de datos de prueba separada de la de desarrollo. Incorporar únicamente dependencias justificadas, estables y compatibles, dentro de los contenedores.
+- Publicar MySQL de desarrollo únicamente en `127.0.0.1` mediante `MYSQL_HOST_PORT` (predeterminado `3307`) para la conexión de DBeaver en Windows. Mantener `db_test` sin puerto publicado y documentar que DBeaver usa el usuario y la contraseña de `.env`.
 - Documentar los comandos para levantar, detener y reconstruir el entorno, entrar a los servicios y ejecutar comandos y pruebas dentro de Docker. Mantener la ejecución del stack y sus herramientas dentro de este entorno.
-- **Comprobación:** los tres servicios arrancan; el frontend alcanza la API, el backend conecta con MySQL y con la base de prueba; el entorno puede detenerse y volver a levantarse; los secretos locales no quedan versionados.
+- **Comprobación:** los tres servicios arrancan; el frontend alcanza la API, el backend conecta con MySQL y con la base de prueba; DBeaver o un cliente MySQL alcanza la base de desarrollo desde `127.0.0.1` por el puerto configurado; la base de pruebas no publica un puerto; el entorno puede detenerse y volver a levantarse; los secretos locales no quedan versionados.
 
 ### 2. Cerrar el contrato técnico de la API y organizar el backend
 
 - Enumerar las operaciones necesarias para profesor y estudiante a partir de `backend.specs.md`: autenticación, catálogo, cuatrimestres y cursos, componentes, matrículas, calificaciones, asistencia, consultas, concentrados y descarga `.xlsx`.
-- Definir para cada operación método y ruta, datos de entrada y salida, validaciones, errores, rol autorizado y pertenencia al curso. Mantener el inicio de sesión como única ruta pública acordada.
+- Definir para cada operación método y ruta, datos de entrada y salida, validaciones, errores, rol autorizado y pertenencia al curso. Mantener como únicas rutas públicas acordadas `POST /api/login` y `GET /api/healt`.
 - Revisar el modelo de datos frente a los flujos completos y resolver con el usuario cualquier regla de negocio aún ambigua antes de fijarla en el contrato o en las migraciones. Organizar rutas, controladores, servicios, modelos, filtros y funciones auxiliares por responsabilidad.
 - **Comprobación:** una matriz relaciona cada requisito de las especificaciones con una operación, una regla de datos y una prueba prevista. El contrato no introduce funcionalidades nuevas sin criterio del usuario y la suite inicial puede ejecutarse en Docker.
 
@@ -30,9 +31,10 @@ Este plan ordena la implementación del backend según [general.md](general.md),
 ### 4. Implementar identidad, cuenta inicial y acceso
 
 - Crear el comando de consola de CodeIgniter para dar de alta al único profesor con correo de dominio permitido y contraseña almacenada como hash; rechazar una segunda cuenta o un correo ya usado.
-- Implementar inicio de sesión por correo y contraseña, emisión de JWT válido durante una hora y filtro de autenticación y autorización para todas las demás rutas. Respetar la comparación de correos que distingue mayúsculas.
+- Implementar inicio de sesión por correo y contraseña, emisión de JWT válido durante una hora y filtro de autenticación y autorización para todas las rutas excepto `POST /api/login` y `GET /api/healt`. Respetar la comparación de correos que distingue mayúsculas.
+- Implementar `GET /api/healt` para comprobar públicamente la respuesta del servidor y una consulta simple en MySQL; devolver `200` si ambos funcionan o `503` si la base de datos no está disponible, sin exponer datos de conexión.
 - Implementar la generación y sustitución de contraseña del estudiante por el profesor y el cambio de contraseña del estudiante desde su perfil, guardando solo hashes.
-- **Pruebas unitarias y de API:** credenciales válidas e inválidas; profesor único; dominio y correo duplicado; hash no reversible en respuestas ni en datos; contraseña anterior invalidada; JWT ausente, manipulado o vencido; rechazo de operaciones de otro rol o estudiante.
+- **Pruebas unitarias y de API:** credenciales válidas e inválidas; profesor único; dominio y correo duplicado; hash no reversible en respuestas ni en datos; contraseña anterior invalidada; JWT ausente, manipulado o vencido; rechazo de operaciones de otro rol o estudiante; acceso sin JWT a `/api/healt`, respuesta `200` con MySQL disponible y `503` ante un fallo de conexión o consulta.
 
 ### 5. Implementar cuatrimestres, cursos y catálogo
 

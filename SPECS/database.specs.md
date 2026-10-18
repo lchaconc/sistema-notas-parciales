@@ -4,6 +4,8 @@
 
 Este documento propone el modelo relacional de MySQL para cumplir [general.md](general.md) y [backend.specs.md](backend.specs.md). Define entidades, claves, relaciones, restricciones y datos derivados. Es una especificación de diseño: no crea tablas ni incluye sentencias SQL.
 
+La publicación local del puerto de MySQL para DBeaver es una configuración de Docker y no cambia el modelo de datos: la base de desarrollo se expone solo en `127.0.0.1` mediante `MYSQL_HOST_PORT` (predeterminado `3307`), mientras que la base de pruebas permanece sin puerto publicado.
+
 Las reglas funcionales proceden de las especificaciones citadas. Los nombres de tablas y campos, el uso de identificadores internos y la separación de `usuarios` y `estudiantes` son decisiones de modelado propuestas aquí. Los detalles no confirmados se listan al final.
 
 ## Criterios del modelo
@@ -114,6 +116,8 @@ El campo `descripcion` admite hasta 256 caracteres y `observacion` hasta 125; si
 - Cada asistencia une una sesión y una matrícula del **mismo curso**. Esta regla requiere verificación en la operación de escritura, además de las claves foráneas individuales.
 
 ## Datos derivados y consultas
+
+La comprobación pública `GET /api/healt` ejecuta una consulta simple (`SELECT 1`) contra la conexión MySQL configurada. No almacena datos, no requiere tablas nuevas y no modifica el esquema.
 
 | Salida | Origen y cálculo | Persistencia |
 | --- | --- | --- |

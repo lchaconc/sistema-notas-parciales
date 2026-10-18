@@ -1,8 +1,8 @@
 # Documentación OpenAPI
 
-El contrato de las 27 operaciones HTTP implementadas en `Backend/app/Config/Routes.php` está en [openapi.yaml](openapi.yaml). Usa OpenAPI 3.0.4 y se visualiza con Swagger UI en `http://localhost:8081` al ejecutar `docker compose up -d api_docs` desde la raíz del repositorio. `docker compose up --build -d` también lo levanta.
+El contrato de las 28 operaciones HTTP implementadas en `Backend/app/Config/Routes.php` está en [openapi.yaml](openapi.yaml). Usa OpenAPI 3.0.4 y se visualiza con Swagger UI en `http://localhost:8081` al ejecutar `docker compose up -d api_docs` desde la raíz del repositorio. `docker compose up --build -d` también lo levanta.
 
-Swagger UI expone la especificación en `http://localhost:8081/openapi.yaml` y envía las pruebas de `/api` al backend mediante un proxy del mismo origen. Para probar operaciones protegidas, inicie sesión con `POST /login`, copie el campo `data.token` y péguelo en **Authorize** sin anteponer `Bearer`. El JWT dura una hora. La cuenta inicial del profesor se crea por consola según el [README principal](../README.md).
+Swagger UI expone la especificación en `http://localhost:8081/openapi.yaml` y envía las pruebas de `/api` al backend mediante un proxy del mismo origen. `GET /healt` y `POST /login` son públicos. Para probar operaciones protegidas, inicie sesión con `POST /login`, copie el campo `data.token` y péguelo en **Authorize** sin anteponer `Bearer`. El JWT dura una hora. La cuenta inicial del profesor se crea por consola según el [README principal](../README.md).
 
 Comprobar el contrato desde Docker:
 

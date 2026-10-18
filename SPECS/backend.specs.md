@@ -9,6 +9,7 @@ El backend ofrece una API para gestionar cursos, estudiantes, evaluaciones, cali
 ## Plataforma y organización
 
 - El backend reside en una carpeta propia dentro del monorepositorio, utiliza PHP y CodeIgniter, se conecta a MySQL y se ejecuta en contenedores Docker.
+- La conexión del backend a MySQL usa el nombre interno `db` y el puerto `3306`. Para inspeccionar la base de desarrollo con DBeaver en Windows, Docker publica ese mismo MySQL solo en `127.0.0.1` con puerto configurable `MYSQL_HOST_PORT` (predeterminado `3307`); la base de pruebas no se publica al anfitrión.
 - Su interfaz para el aplicativo es una API. Las vistas para profesor y estudiante corresponden al frontend.
 - La implementación debe separar rutas, controladores, servicios, modelos, filtros o middleware y funciones auxiliares según su responsabilidad. Las rutas exponen las operaciones; los controladores atienden las solicitudes y respuestas; los servicios aplican reglas de negocio; los modelos gestionan datos; los filtros verifican acceso.
 - Las credenciales de MySQL, la clave de firma JWT y demás secretos se proporcionan mediante variables de entorno. Los archivos de entorno locales se mantienen fuera de Git. No se incluyen secretos en respuestas destinadas al frontend.
@@ -46,7 +47,8 @@ La siguiente tabla define relaciones funcionales. No prescribe nombres de tablas
 
 - La ruta de inicio de sesión acepta correo y contraseña sin JWT previo. Si las credenciales son válidas, entrega un JWT para acceder a las rutas protegidas.
 - El JWT es válido durante una hora. Una vez vencido, el backend rechaza su uso en rutas protegidas y el frontend cierra la sesión del usuario.
-- Todas las demás rutas de la API requieren un JWT válido. El backend identifica al usuario y su rol a partir de la autenticación, y verifica el permiso correspondiente antes de ejecutar la operación.
+- La otra ruta pública es `GET /api/healt`: comprueba que el servidor atiende la solicitud y ejecuta una consulta simple en MySQL sin requerir JWT. Devuelve disponibilidad cuando la consulta funciona y un estado HTTP de servicio no disponible cuando falla, sin revelar credenciales ni detalles internos.
+- Todas las rutas de la API salvo `POST /api/login` y `GET /api/healt` requieren un JWT válido. El backend identifica al usuario y su rol a partir de la autenticación, y verifica el permiso correspondiente antes de ejecutar la operación.
 - El profesor puede realizar las operaciones de gestión. El estudiante solo puede consultar sus propias calificaciones y asistencia, consultar sus concentrados y cambiar su contraseña. La descarga `.xlsx` del concentrado corresponde solo al profesor.
 - La autorización de las consultas del estudiante se aplica en el backend: el estudiante no puede obtener datos de otro estudiante mediante parámetros manipulados.
 

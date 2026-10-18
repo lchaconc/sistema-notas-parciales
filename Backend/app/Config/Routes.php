@@ -5,6 +5,7 @@ use CodeIgniter\Router\RouteCollection;
 /** @var RouteCollection $routes */
 $routes->setAutoRoute(false);
 $routes->post('api/login', 'AuthController::login');
+$routes->get('api/healt', 'HealthController::index');
 
 $routes->group('api/profesor', ['filter' => 'jwt:profesor'], static function ($routes) {
     $routes->post('estudiantes/(:num)/contrasena', 'AuthController::generatePassword/$1');

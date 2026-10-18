@@ -2,13 +2,14 @@
 
 La versión ejecutable de este contrato en OpenAPI 3.0.4 está en [API-DOCS/openapi.yaml](../API-DOCS/openapi.yaml) y se visualiza con Swagger UI en Docker.
 
-Todas las rutas comienzan con `/api`. Salvo `POST /api/login`, requieren `Authorization: Bearer <JWT>`. Las solicitudes con cuerpo usan `Content-Type: application/json` y un objeto JSON. Las respuestas normales son `{ "data": ... }`; los rechazos controlados son `{ "error": "motivo" }`. Se usan `400` para datos inválidos, `401` para autenticación ausente o inválida, `403` para rol incorrecto, `404` para recurso o matrícula inexistente, `409` para conflictos y `500` para fallos internos. Las creaciones devuelven `201`; las demás operaciones, `200`. La descarga `.xlsx` devuelve contenido binario.
+Todas las rutas comienzan con `/api`. Salvo `POST /api/login` y `GET /api/healt`, requieren `Authorization: Bearer <JWT>`. Las solicitudes con cuerpo usan `Content-Type: application/json` y un objeto JSON. Las respuestas normales son `{ "data": ... }`; los rechazos controlados son `{ "error": "motivo" }`. Se usan `400` para datos inválidos, `401` para autenticación ausente o inválida, `403` para rol incorrecto, `404` para recurso o matrícula inexistente, `409` para conflictos, `500` para fallos internos y `503` cuando la comprobación de MySQL falla. Las creaciones devuelven `201`; las demás operaciones correctas, `200`. La descarga `.xlsx` devuelve contenido binario.
 
 ## Sesión e identidad
 
 | Método y ruta | Rol | Entrada o salida principal |
 | --- | --- | --- |
 | `POST /login` | Público | `{correo, contrasena}` → `{token, expires_in: 3600, rol}`. |
+| `GET /healt` | Público | Sin entrada ni JWT. `200`: `{data: {servidor: "ok", base_datos: "ok"}}` tras `SELECT 1` en MySQL; `503`: `{error: "Base de datos no disponible."}` si falla la comprobación. |
 | `POST /profesor/estudiantes/{estudianteId}/contrasena` | Profesor | Genera otra clave y devuelve `{contrasena}` una sola vez. |
 | `PUT /estudiante/perfil/contrasena` | Estudiante | `{contrasena_nueva}` → `{actualizada: true}`. |
 

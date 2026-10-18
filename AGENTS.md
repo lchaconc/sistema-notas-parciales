@@ -14,12 +14,13 @@
 - Organiza la solución como monorepositorio y trabaja todo el proyecto dentro de un entorno Docker: frontend, backend y MySQL deben poder levantarse y comunicarse mediante sus contenedores.
 - Al iniciar la implementación, prepara y configura primero el entorno Docker hasta poder levantarlo y usarlo. Solo después desarrolla los módulos del backend y del frontend sobre ese entorno. Ejecuta allí los comandos del proyecto, las migraciones, el comando de creación del profesor y las pruebas; no dependas de instalaciones locales del stack para trabajar en el aplicativo.
 - Documenta cómo levantar, detener y reconstruir el entorno, cómo acceder a frontend y API, y cómo ejecutar las pruebas dentro de Docker. Comprueba el arranque y la comunicación entre servicios antes de continuar con las funcionalidades.
+- Para inspeccionar la base de desarrollo desde DBeaver en Windows, publica solo el puerto de MySQL de desarrollo en `127.0.0.1`, configurable mediante `MYSQL_HOST_PORT` (predeterminado `3307`). No publiques `db_test`; el backend sigue usando el host interno `db` y el puerto `3306`. Mantén las credenciales en `.env`, fuera de Git.
 - **Frontend:** carpeta independiente con Vite, React, Tailwind CSS y Motion. Usa JavaScript; no uses TypeScript. Consume la API del backend con `fetch` nativo.
 - **Backend:** toda la aplicación PHP/CodeIgniter reside en `Backend/` y usa MySQL. Su única función de interfaz es ofrecer una API al frontend; no construyas vistas de servidor para el aplicativo.
 - **Documentación de API:** mantén `API-DOCS/openapi.yaml` alineado con todas las rutas de `Backend/app/Config/Routes.php`. Swagger UI corre en un contenedor independiente y no constituye implementación del cliente en `frontend/`.
 - Almacena las contraseñas únicamente como hashes en la base de datos, tanto al generarlas como al cambiarlas. Nunca guardes la contraseña en texto claro.
 - El único profesor debe tener una cuenta con correo y contraseña almacenada como hash. Crea esa cuenta una sola vez mediante un comando de consola de CodeIgniter; no generes cuentas de profesor adicionales.
-- Protege las rutas de la API mediante JWT. La ruta de inicio de sesión es la excepción acordada: recibe correo y contraseña sin JWT previo y entrega un token después de autenticar al usuario. Solicita el criterio del usuario antes de añadir cualquier otra ruta pública.
+- Protege las rutas de la API mediante JWT, salvo las dos rutas públicas acordadas: `POST /api/login`, que recibe correo y contraseña y entrega un token tras autenticar, y `GET /api/healt`, que comprueba la disponibilidad del servidor y la conexión a MySQL. Solicita el criterio del usuario antes de añadir cualquier otra ruta pública.
 - No agregues otros frameworks ni reemplaces el stack acordado sin autorización del usuario.
 
 ## Dependencias
