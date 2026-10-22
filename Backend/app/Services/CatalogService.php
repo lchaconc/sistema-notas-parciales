@@ -17,7 +17,11 @@ class CatalogService
 
     public function all(): array
     {
-        return $this->catalog->orderBy('nombre')->findAll();
+        $rows = db_connect()->table('catalogo_actividades ca')
+            ->select('ca.id, ca.nombre')
+            ->select('EXISTS (SELECT 1 FROM componentes_evaluacion c WHERE c.actividad_catalogo_id = ca.id) AS en_uso', false)
+            ->orderBy('ca.nombre')->get()->getResultArray();
+        return array_map(static fn (array $row): array => [...$row, 'en_uso' => (bool) $row['en_uso']], $rows);
     }
 
     public function create(array $data): array
@@ -26,7 +30,7 @@ class CatalogService
         if ($this->catalog->where('nombre', $name)->first()) {
             throw new ApiError('La actividad ya existe en el catálogo.', 409);
         }
-        return $this->catalog->find($this->catalog->insert(['nombre' => $name], true));
+        return [...$this->catalog->find($this->catalog->insert(['nombre' => $name], true)), 'en_uso' => false];
     }
 
     public function update(int $id, array $data): array
@@ -38,7 +42,7 @@ class CatalogService
             throw new ApiError('La actividad ya existe en el catálogo.', 409);
         }
         $this->catalog->update($id, ['nombre' => $name]);
-        return $this->catalog->find($id);
+        return [...$this->catalog->find($id), 'en_uso' => false];
     }
 
     public function delete(int $id): array

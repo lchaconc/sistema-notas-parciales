@@ -40,6 +40,7 @@ Este plan ordena la implementación del backend según [general.md](general.md),
 
 - Registrar y consultar cuatrimestres con código `N-AAAA` y fechas compartidas; crear y consultar cursos identificados por cuatrimestre, código y número de grupo.
 - Implementar el CRUD del catálogo, su carga inicial y el bloqueo de edición y eliminación mientras una actividad esté vinculada a un componente.
+- Incluir `en_uso` en la consulta y en las respuestas de creación y edición del catálogo para que el frontend pueda bloquear las acciones cuando corresponda; mantener la validación del backend ante cambios concurrentes.
 - Posponer la eliminación del curso hasta el paso 10, cuando ya existan todas las relaciones que debe limpiar.
 - **Pruebas de integración y API:** formatos y fechas válidos; grupos con código repetido sin mezclar datos; rechazo de combinaciones duplicadas; nombres del catálogo repetidos con distinto uso de mayúsculas o tildes; bloqueo de actividades en uso.
 
@@ -59,6 +60,7 @@ Este plan ordena la implementación del backend según [general.md](general.md),
 ### 8. Implementar calificaciones y resultados
 
 - Registrar por matrícula y actividad individual los puntos obtenidos y la observación. Verificar que la actividad pertenezca al curso de la matrícula y que la nota esté entre cero y el puntaje asignado.
+- Permitir al profesor consultar la nota y observación previas de una actividad antes de editarlas; devolver valores nulos cuando aún no existe calificación y comprobar la pertenencia al mismo curso.
 - Calcular el aporte porcentual de cada actividad según la proporción de puntos, truncarlo a dos decimales antes de sumar y calcular el resultado del curso. Tratar la ausencia de nota como aporte cero sin confundirla con una nota explícita de `0,00`.
 - **Pruebas unitarias:** `8,50` de 10 puntos con peso de 2 % aporta `1,70 %`; reparto truncado; notas cero, máximas, ausentes y fuera de rango; suma de aportes previamente truncados. **Pruebas de integración y API:** observación de máximo 125 caracteres y rechazo de una actividad de otro curso o grupo.
 

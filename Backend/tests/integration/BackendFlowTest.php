@@ -191,6 +191,73 @@ final class BackendFlowTest extends CIUnitTestCase
         (new CatalogService())->create(['nombre' => 'Prúeba parcial']);
     }
 
+    public function testCatalogUsageAndProfessorCanReadPreviousObservation(): void
+    {
+        (new AuthService())->createProfessor('profesor@ucatolica.ac.cr', 'clave-prueba');
+        $token = json_decode($this->jsonRequest('POST', 'api/login', [
+            'correo' => 'profesor@ucatolica.ac.cr', 'contrasena' => 'clave-prueba',
+        ])->getJSON(), true)['data']['token'];
+        $catalogId = (int) $this->testDb->table('catalogo_actividades')->get()->getRow('id');
+        $catalog = new CatalogService();
+        $this->assertFalse($catalog->all()[0]['en_uso']);
+        $newCatalog = $catalog->create(['nombre' => 'Proyecto']);
+        $this->assertFalse($newCatalog['en_uso']);
+        $this->assertFalse($catalog->update($catalogId, ['nombre' => 'Prueba parcial'])['en_uso']);
+
+        $courses = new CourseService();
+        $quarter = $courses->createQuarter(['codigo' => '1-2025', 'fecha_inicio' => '2025-01-01', 'fecha_cierre' => '2025-04-30']);
+        $course = $courses->createCourse([
+            'cuatrimestre_id' => (int) $quarter['id'], 'nombre' => 'Curso', 'codigo' => 'C1', 'numero_grupo' => 1,
+        ]);
+        $component = (new EvaluationService())->createComponent((int) $course['id'], [
+            'actividad_catalogo_id' => $catalogId, 'titulo' => 'Parcial', 'cantidad_actividades' => 1,
+            'porcentaje_total' => '2.00', 'puntaje_total' => '10.00',
+        ]);
+        $usage = array_column($catalog->all(), 'en_uso', 'id');
+        $this->assertTrue($usage[$catalogId]);
+        $this->assertFalse($usage[$newCatalog['id']]);
+        $listed = json_decode($this->jsonRequest('GET', 'api/profesor/catalogo', null, $token)->getJSON(), true)['data'];
+        $this->assertTrue(array_column($listed, 'en_uso', 'id')[$catalogId]);
+
+        $student = (new EnrollmentService())->enroll((int) $course['id'], [
+            'nombre' => 'Ana', 'primer_apellido' => 'Uno', 'segundo_apellido' => 'Dos',
+            'correo' => 'ana@ucatolica.ac.cr',
+        ]);
+        $activityId = (int) $this->testDb->table('actividades_individuales')
+            ->where('componente_id', $component['id'])->get()->getRow('id');
+        $path = 'api/profesor/calificaciones/' . $student['id'] . '/' . $activityId;
+        $this->jsonRequest('GET', $path)->assertStatus(401);
+        $password = (new AuthService())->generateStudentPassword($student['estudiante_id'])['contrasena'];
+        $studentToken = json_decode($this->jsonRequest('POST', 'api/login', [
+            'correo' => 'ana@ucatolica.ac.cr', 'contrasena' => $password,
+        ])->getJSON(), true)['data']['token'];
+        $this->jsonRequest('GET', $path, null, $studentToken)->assertStatus(403);
+        $empty = $this->jsonRequest('GET', $path, null, $token);
+        $empty->assertStatus(200);
+        $this->assertSame(['matricula_id' => $student['id'], 'actividad_individual_id' => $activityId,
+            'puntos_obtenidos' => null, 'observacion' => null], json_decode($empty->getJSON(), true)['data']);
+
+        $this->jsonRequest('PUT', $path, ['puntos_obtenidos' => '8.50', 'observacion' => 'Primera observación'], $token)->assertStatus(200);
+        $saved = $this->jsonRequest('GET', $path, null, $token);
+        $saved->assertStatus(200);
+        $this->assertSame('8.50', json_decode($saved->getJSON(), true)['data']['puntos_obtenidos']);
+        $this->assertSame('Primera observación', json_decode($saved->getJSON(), true)['data']['observacion']);
+        $this->jsonRequest('PUT', $path, ['puntos_obtenidos' => '9.00', 'observacion' => 'Corregida'], $token)->assertStatus(200);
+        $this->assertSame('Corregida', json_decode($this->jsonRequest('GET', $path, null, $token)->getJSON(), true)['data']['observacion']);
+        $this->jsonRequest('GET', 'api/profesor/calificaciones/999999/' . $activityId, null, $token)->assertStatus(404);
+        $otherCourse = $courses->createCourse([
+            'cuatrimestre_id' => (int) $quarter['id'], 'nombre' => 'Otro grupo', 'codigo' => 'C1', 'numero_grupo' => 2,
+        ]);
+        $otherEnrollment = (new EnrollmentService())->enroll((int) $otherCourse['id'], [
+            'nombre' => 'Ana', 'primer_apellido' => 'Uno', 'segundo_apellido' => 'Dos',
+            'correo' => 'ana@ucatolica.ac.cr',
+        ]);
+        $this->jsonRequest('GET', 'api/profesor/calificaciones/' . $otherEnrollment['id'] . '/' . $activityId, null, $token)->assertStatus(409);
+        $courses->deleteCourse((int) $course['id']);
+        $usageAfterDelete = array_column($catalog->all(), 'en_uso', 'id');
+        $this->assertFalse($usageAfterDelete[$catalogId]);
+    }
+
     public function testEqualDistributionCatalogLockAndGradeBoundaries(): void
     {
         $courses = new CourseService();

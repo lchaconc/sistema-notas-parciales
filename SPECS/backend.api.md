@@ -22,12 +22,13 @@ Todas las rutas comienzan con `/api`. Salvo `POST /api/login` y `GET /api/healt`
 | `GET /profesor/cursos` | Lista de cursos con su cuatrimestre y fechas. |
 | `POST /profesor/cursos` | `{cuatrimestre_id, nombre, codigo, numero_grupo}`. |
 | `DELETE /profesor/cursos/{cursoId}` | Elimina tras el cierre; requiere confirmación previa en la interfaz. |
-| `GET /profesor/catalogo` | Lista de actividades del catálogo. |
-| `POST /profesor/catalogo` | `{nombre}`. |
-| `PUT /profesor/catalogo/{id}` | `{nombre}`. |
+| `GET /profesor/catalogo` | Lista de actividades del catálogo, cada una con `en_uso` booleano. |
+| `POST /profesor/catalogo` | `{nombre}` → actividad con `en_uso: false`. |
+| `PUT /profesor/catalogo/{id}` | `{nombre}` → actividad con `en_uso: false`; rechaza si está en uso. |
 | `DELETE /profesor/catalogo/{id}` | Elimina una opción libre. |
 | `GET /profesor/cursos/{cursoId}/componentes` | Componentes y sus actividades individuales. |
 | `POST /profesor/cursos/{cursoId}/componentes` | `{actividad_catalogo_id, titulo, cantidad_actividades, descripcion?, porcentaje_total, puntaje_total}`. |
+| `GET /profesor/calificaciones/{matriculaId}/{actividadId}` | Nota y observación vigentes de esa actividad y matrícula; ambos `null` si aún no hay calificación. Rechaza asociaciones entre cursos distintos. |
 | `GET /profesor/estudiantes` | Lista de estudiantes. |
 | `GET /profesor/cursos/{cursoId}/matriculas` | Matrículas del curso. |
 | `POST /profesor/cursos/{cursoId}/matriculas` | `{nombre, primer_apellido, segundo_apellido, correo}`. |

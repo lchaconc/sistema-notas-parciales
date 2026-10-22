@@ -51,6 +51,7 @@ La siguiente tabla define relaciones funcionales. No prescribe nombres de tablas
 - Todas las rutas de la API salvo `POST /api/login` y `GET /api/healt` requieren un JWT válido. El backend identifica al usuario y su rol a partir de la autenticación, y verifica el permiso correspondiente antes de ejecutar la operación.
 - El profesor puede realizar las operaciones de gestión. El estudiante solo puede consultar sus propias calificaciones y asistencia, consultar sus concentrados y cambiar su contraseña. La descarga `.xlsx` del concentrado corresponde solo al profesor.
 - La autorización de las consultas del estudiante se aplica en el backend: el estudiante no puede obtener datos de otro estudiante mediante parámetros manipulados.
+- Al recargar el frontend antes de que venza el JWT, la sesión del usuario sigue disponible hasta el vencimiento; el backend mantiene la vigencia de una hora y no amplía el token por la recarga.
 
 ### Contraseñas de estudiantes
 
@@ -74,6 +75,7 @@ La siguiente tabla define relaciones funcionales. No prescribe nombres de tablas
 - El profesor puede crear, consultar, editar y eliminar opciones del catálogo.
 - Rechazar la creación o el cambio de nombre de una actividad si ya existe otra con ese mismo nombre, sin distinguir mayúsculas, minúsculas ni tildes. Por ejemplo, `Prueba parcial`, `prueba parcial` y `Prúeba parcial` son duplicados.
 - Impedir la edición o eliminación de una opción mientras esté asociada a cualquier componente de evaluación. Eliminar un curso no elimina su opción del catálogo.
+- Al consultar el catálogo, informar para cada actividad un valor booleano `en_uso` calculado a partir de sus asociaciones vigentes. Una actividad recién creada no está en uso. El rechazo del backend sigue siendo obligatorio aunque el frontend bloquee esas acciones.
 
 ### Componentes de evaluación
 
@@ -97,6 +99,7 @@ La siguiente tabla define relaciones funcionales. No prescribe nombres de tablas
 - Rechazar una calificación negativa o superior al puntaje asignado a la actividad. Aceptar el cero y el puntaje completo.
 - Tratar como cero, para el cálculo del resultado del curso, una actividad cuya calificación todavía no se ha registrado.
 - Asociar a esa actividad y estudiante una observación del profesor de máximo 125 caracteres.
+- Permitir que el profesor consulte la nota y observación vigentes de una matrícula y actividad individual antes de volver a editarlas. Si todavía no hay calificación, devolver ambas como `null`; rechazar asociaciones de cursos o grupos distintos. Esta consulta requiere JWT de profesor y no añade observaciones al concentrado.
 - Calcular el aporte porcentual de cada actividad en proporción a la nota ingresada: `aporte = (puntos obtenidos / puntaje asignado a la actividad) × porcentaje asignado a la actividad`.
 - Ejemplo: en una actividad de 10 puntos y 2 %, una nota de `8,50` puntos aporta `1,70 %`; una nota de `10,00` puntos aporta `2,00 %`.
 - Truncar a dos decimales el aporte porcentual de cada actividad antes de sumarlo. Calcular el resultado del curso como suma de esos aportes truncados y truncar también el resultado final a dos decimales.

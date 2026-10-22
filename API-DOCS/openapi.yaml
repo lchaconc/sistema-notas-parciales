@@ -256,6 +256,21 @@ paths:
         '404': { $ref: '#/components/responses/NotFound' }
         '500': { $ref: '#/components/responses/InternalError' }
   /profesor/calificaciones/{matriculaId}/{actividadId}:
+    get:
+      tags: [Evaluación]
+      summary: Consultar la nota y observación de una actividad individual
+      description: Devuelve valores nulos si aún no hay calificación. La matrícula y la actividad deben pertenecer al mismo curso.
+      operationId: getGrade
+      parameters:
+        - $ref: '#/components/parameters/MatriculaId'
+        - $ref: '#/components/parameters/ActividadId'
+      responses:
+        '200': { $ref: '#/components/responses/GradeDetail' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '500': { $ref: '#/components/responses/InternalError' }
     put:
       tags: [Evaluación]
       summary: Registrar o actualizar una nota individual
@@ -608,9 +623,10 @@ components:
       allOf:
         - $ref: '#/components/schemas/CatalogInput'
         - type: object
-          required: [id]
+          required: [id, en_uso]
           properties:
             id: { type: integer, minimum: 1 }
+            en_uso: { type: boolean, description: Indica si la actividad está asociada a algún componente y no puede editarse ni eliminarse. }
     ComponentInput:
       type: object
       required: [actividad_catalogo_id, titulo, cantidad_actividades, porcentaje_total, puntaje_total]
@@ -709,6 +725,14 @@ components:
         matricula_id: { type: integer, minimum: 1 }
         actividad_individual_id: { type: integer, minimum: 1 }
         puntos_obtenidos: { $ref: '#/components/schemas/DecimalOutput' }
+        observacion: { type: string, nullable: true, maxLength: 125 }
+    GradeDetailData:
+      type: object
+      required: [matricula_id, actividad_individual_id, puntos_obtenidos, observacion]
+      properties:
+        matricula_id: { type: integer, minimum: 1 }
+        actividad_individual_id: { type: integer, minimum: 1 }
+        puntos_obtenidos: { $ref: '#/components/schemas/NullableDecimalOutput' }
         observacion: { type: string, nullable: true, maxLength: 125 }
     AttendanceEntryInput:
       type: object
@@ -1030,6 +1054,15 @@ components:
             required: [data]
             properties:
               data: { $ref: '#/components/schemas/GradeSavedData' }
+    GradeDetail:
+      description: Nota y observación actuales; valores nulos si aún no se ha calificado.
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [data]
+            properties:
+              data: { $ref: '#/components/schemas/GradeDetailData' }
     SessionList:
       description: Sesiones del curso con asistencia de cada estudiante.
       content:

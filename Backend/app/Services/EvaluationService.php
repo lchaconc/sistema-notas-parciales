@@ -81,18 +81,7 @@ class EvaluationService
 
     public function saveGrade(int $enrollmentId, int $activityId, array $data): array
     {
-        $db = db_connect();
-        $row = $db->table('matriculas m')
-            ->select('m.curso_id, ai.puntaje_asignado, c.curso_id AS actividad_curso_id')
-            ->join('actividades_individuales ai', 'ai.id = ' . (int) $activityId)
-            ->join('componentes_evaluacion c', 'c.id = ai.componente_id')
-            ->where('m.id', $enrollmentId)->get()->getRowArray();
-        if (!$row) {
-            throw new ApiError('Matrícula o actividad no encontrada.', 404);
-        }
-        if ($row['curso_id'] !== $row['actividad_curso_id']) {
-            throw new ApiError('La actividad no pertenece al curso de la matrícula.', 409);
-        }
+        $row = $this->gradeContext($enrollmentId, $activityId);
         $maxCents = Input::cents(['max' => $row['puntaje_asignado']], 'max');
         $pointsCents = Input::cents($data, 'puntos_obtenidos', 0, $maxCents);
         $observation = Input::optionalText($data, 'observacion', 125);
@@ -111,5 +100,34 @@ class EvaluationService
             $record['id'] = (int) $grades->insert($record, true);
         }
         return $record;
+    }
+
+    public function grade(int $enrollmentId, int $activityId): array
+    {
+        $this->gradeContext($enrollmentId, $activityId);
+        $existing = (new GradeModel())->where('matricula_id', $enrollmentId)
+            ->where('actividad_individual_id', $activityId)->first();
+        return [
+            'matricula_id' => $enrollmentId,
+            'actividad_individual_id' => $activityId,
+            'puntos_obtenidos' => $existing['puntos_obtenidos'] ?? null,
+            'observacion' => $existing['observacion'] ?? null,
+        ];
+    }
+
+    private function gradeContext(int $enrollmentId, int $activityId): array
+    {
+        $row = db_connect()->table('matriculas m')
+            ->select('m.curso_id, ai.puntaje_asignado, c.curso_id AS actividad_curso_id')
+            ->join('actividades_individuales ai', 'ai.id = ' . (int) $activityId)
+            ->join('componentes_evaluacion c', 'c.id = ai.componente_id')
+            ->where('m.id', $enrollmentId)->get()->getRowArray();
+        if (!$row) {
+            throw new ApiError('Matrícula o actividad no encontrada.', 404);
+        }
+        if ($row['curso_id'] !== $row['actividad_curso_id']) {
+            throw new ApiError('La actividad no pertenece al curso de la matrícula.', 409);
+        }
+        return $row;
     }
 }

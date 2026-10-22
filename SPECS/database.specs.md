@@ -17,6 +17,7 @@ Las reglas funcionales proceden de las especificaciones citadas. Los nombres de 
 - Las calificaciones se relacionan con una matrícula y una actividad individual; las asistencias, con una matrícula y una sesión del mismo curso.
 - Los porcentajes, puntajes y notas usan números decimales exactos, no tipos de coma flotante. Los valores repartidos por actividad y los aportes porcentuales se truncan a dos decimales según las reglas acordadas.
 - El resultado del curso, las vistas de concentrado y los archivos `.xlsx` se calculan a partir de los datos vigentes. No requieren tablas de resultados o archivos permanentes.
+- El indicador `en_uso` del catálogo se calcula al consultar si la actividad tiene componentes asociados. No requiere columna nueva. La nota y observación que consulta el profesor proceden de `calificaciones`; su ausencia se devuelve como valores nulos sin crear una fila.
 - Los JWT y sus claves de firma no se almacenan en estas tablas; la clave se configura mediante una variable de entorno.
 
 ## Diagrama de relaciones

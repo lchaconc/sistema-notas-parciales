@@ -29,6 +29,7 @@ El aplicativo permitirá registrar y consultar calificaciones y asistencia de es
 - No se permiten dos actividades del catálogo con el mismo nombre, aunque difieran solo en mayúsculas, minúsculas o tildes. Por ejemplo, `Prueba parcial`, `prueba parcial` y `Prúeba parcial` son duplicados.
 - La eliminación de un curso no elimina actividades del catálogo; estas se gestionan únicamente en este módulo.
 - Una actividad del catálogo queda bloqueada para edición y eliminación mientras esté asociada a un componente de evaluación.
+- La consulta del catálogo informa al frontend si cada actividad está en uso, para bloquear sus acciones de edición y eliminación cuando corresponde.
 
 ## Componentes de evaluación
 
@@ -56,6 +57,7 @@ El porcentaje y el puntaje del componente se distribuyen por igual entre sus act
 
 - El profesor selecciona a un estudiante y registra una calificación por cada actividad individual de los componentes del curso en que está matriculado.
 - Cada actividad individual asociada al estudiante dispone de una observación del profesor, con un máximo de 125 caracteres.
+- Al volver a abrir una calificación, el profesor puede consultar y editar la observación que registró anteriormente en esa actividad individual.
 - El profesor ingresa los puntos obtenidos por el estudiante en cada actividad, como un número con dos decimales; por ejemplo, `8,50`.
 - La nota ingresada debe estar entre cero y el puntaje asignado a la actividad, inclusive. Se rechazan notas negativas o superiores a ese puntaje. Una actividad aún sin nota cuenta como cero para el cálculo del resultado del curso.
 - La aplicación calcula el aporte porcentual de cada actividad en proporción a los puntos obtenidos: `aporte = (puntos obtenidos / puntaje asignado a la actividad) × porcentaje de la actividad`. Por ejemplo, si la actividad vale 10 puntos y 2 %, obtener `10,00` puntos aporta `2,00 %` y obtener `8,50` puntos aporta `1,70 %`.
@@ -95,7 +97,7 @@ El porcentaje y el puntaje del componente se distribuyen por igual entre sus act
 - La carpeta de frontend utiliza Vite, React, Tailwind CSS y Motion. Las solicitudes al backend usan `fetch` nativo.
 - Se utiliza JavaScript, sin TypeScript, en el frontend.
 - La carpeta `Backend/` contiene toda la aplicación de servidor con PHP, CodeIgniter y MySQL.
-- Las rutas de la API se protegen mediante JWT, con dos excepciones públicas: `POST /api/login` acepta correo y contraseña sin JWT previo y entrega un token válido durante una hora tras autenticar; `GET /api/healt` verifica que el servidor responde y que puede consultar MySQL, sin JWT. Si la base de datos no responde, esta última ruta devuelve un estado de servicio no disponible sin exponer credenciales ni detalles internos. Al vencer el token, el backend deja de aceptar las solicitudes autenticadas y el frontend cierra la sesión del usuario.
+- Las rutas de la API se protegen mediante JWT, con dos excepciones públicas: `POST /api/login` acepta correo y contraseña sin JWT previo y entrega un token válido durante una hora tras autenticar; `GET /api/healt` verifica que el servidor responde y que puede consultar MySQL, sin JWT. Si la base de datos no responde, esta última ruta devuelve un estado de servicio no disponible sin exponer credenciales ni detalles internos. Si el usuario recarga el frontend antes de que venza el JWT, conserva la sesión hasta su vencimiento. Al vencer el token, el backend deja de aceptar las solicitudes autenticadas y el frontend cierra la sesión del usuario.
 - Se evitan dependencias innecesarias. Las dependencias que se incorporen deben tener aceptación en la comunidad y una versión estable y segura.
 
 ## Pruebas durante la implementación

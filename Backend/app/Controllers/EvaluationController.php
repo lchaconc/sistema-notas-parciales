@@ -20,4 +20,9 @@ class EvaluationController extends ApiController
     {
         return $this->runAction(fn () => (new EvaluationService())->saveGrade($enrollmentId, $activityId, $this->body()));
     }
+
+    public function grade(int $enrollmentId, int $activityId)
+    {
+        return $this->runAction(fn () => (new EvaluationService())->grade($enrollmentId, $activityId));
+    }
 }

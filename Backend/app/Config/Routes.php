@@ -20,6 +20,7 @@ $routes->group('api/profesor', ['filter' => 'jwt:profesor'], static function ($r
     $routes->delete('catalogo/(:num)', 'CatalogController::delete/$1');
     $routes->get('cursos/(:num)/componentes', 'EvaluationController::components/$1');
     $routes->post('cursos/(:num)/componentes', 'EvaluationController::createComponent/$1');
+    $routes->get('calificaciones/(:num)/(:num)', 'EvaluationController::grade/$1/$2');
     $routes->put('calificaciones/(:num)/(:num)', 'EvaluationController::saveGrade/$1/$2');
     $routes->get('estudiantes', 'EnrollmentController::students');
     $routes->get('cursos/(:num)/matriculas', 'EnrollmentController::enrollments/$1');
