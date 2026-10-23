@@ -2,7 +2,7 @@
 
 ## Alcance y fuentes
 
-Este plan descompone [frontend.specs.md](frontend.specs.md) en trabajo verificable. Rigen también [general.md](general.md), [AGENTS.md](../AGENTS.md) y el contrato vigente de [API-DOCS/openapi.yaml](../API-DOCS/openapi.yaml). La plantilla base del frontend y el entorno Docker ya existen. **Este documento solo planifica: no autoriza implementar pantallas, componentes, flujos ni llamadas a la API hasta que el usuario lo indique expresamente.**
+Este plan descompone [frontend.specs.md](frontend.specs.md) en trabajo verificable. Rigen también [general.md](general.md), [AGENTS.md](../AGENTS.md) y el contrato vigente de [API-DOCS/openapi.yaml](../API-DOCS/openapi.yaml). La plantilla base del frontend y el entorno Docker ya existen. El usuario autorizó la implementación del cliente.
 
 Cada tarea funcional incluye la comprobación de sus estados de carga, vacío, éxito y error cuando correspondan. Las pruebas se preparan y ejecutan durante la implementación de cada bloque, con datos separados de la base de desarrollo. No se añaden bibliotecas por anticipado: antes de incorporar una herramienta de prueba u otra dependencia se verifica si es necesaria, estable, mantenida y compatible con el stack acordado.
 
@@ -21,7 +21,9 @@ Cada tarea funcional incluye la comprobación de sus estados de carga, vacío, �
 - Separar páginas por rol, componentes comunes, funciones de acceso a la API y utilidades con lógica reutilizable. Mantener las llamadas `fetch` fuera de los componentes de presentación.
 - Establecer estilos reutilizables con Tailwind CSS para la dirección institucional sobria: nombre «Sistema de Notas Parciales», paleta provisional, tipografía legible, espaciado equilibrado, formularios, botones, tablas, tarjetas y estados de foco, carga, vacío y error. No presentar la paleta provisional como identidad oficial.
 - Preparar la estructura adaptable a computadora y celular: menú lateral fijo del profesor en escritorio, panel lateral abierto por botón en celular, y pestañas de curso deslizables en una sola fila en celular. Mantener visible el contexto de curso, cuatrimestre y grupo.
+- Añadir un botón compartido de sol y luna en acceso y en ambas áreas autenticadas para alternar temas claro y oscuro. Conservar el aspecto claro actual, adaptar todos los componentes y estados al modo oscuro y guardar la elección localmente para recuperarla tras recargar o cerrar sesión. Mantener el control visible y operable con teclado en computadora y celular, sin cambiar navegación ni contratos de API.
 - **Pruebas de componentes y revisión visual:** navegación por teclado, foco visible, etiquetas y mensajes comprensibles, contraste de textos y controles, y uso sin pérdida de funciones en tamaños de computadora y celular.
+- **Pruebas del tema:** comprobar el cambio en ambos sentidos, valor claro inicial, persistencia al recargar y cerrar sesión, nombre accesible del botón y revisión visual de acceso, formularios, tablas, tarjetas, mensajes y foco en ambos temas y tamaños.
 
 ### 3. Implementar acceso a la API, sesión y navegación por rol
 

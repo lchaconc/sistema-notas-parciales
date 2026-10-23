@@ -4,7 +4,7 @@
 
 El frontend permite al único profesor gestionar cursos, evaluaciones, matrículas, calificaciones y asistencia, y a cada estudiante consultar sus propios resultados y cambiar su contraseña. Esta especificación desarrolla [general.md](general.md) con las restricciones de [AGENTS.md](../AGENTS.md). El documento [requerimientos-iniciales.docx](requerimientos-iniciales.docx) aporta el origen de los flujos; las decisiones posteriores registradas en los Markdown prevalecen cuando lo precisan. El contrato HTTP vigente es [API-DOCS/openapi.yaml](../API-DOCS/openapi.yaml), resumido en [backend.api.md](backend.api.md).
 
-Este documento describe el comportamiento esperado del cliente. No autoriza por sí mismo a implementar el frontend: la restricción vigente en `AGENTS.md` mantiene únicamente la plantilla base hasta que el usuario indique comenzar su desarrollo. La ejecución se organiza en [frontend.tasks.md](frontend.tasks.md) y se verifica mediante [frontend.criteria.md](frontend.criteria.md).
+Este documento describe el comportamiento esperado del cliente. El usuario autorizó su implementación. La ejecución se organiza en [frontend.tasks.md](frontend.tasks.md) y se verifica mediante [frontend.criteria.md](frontend.criteria.md).
 
 ## Plataforma y responsabilidades
 
@@ -119,6 +119,7 @@ La contraseña generada por el profesor es información sensible: solo se presen
 
 - La cabecera y la pantalla de acceso muestran el nombre **Sistema de Notas Parciales**.
 - La dirección visual acordada es **institucional sobria**. Mientras no se aporten logotipo ni colores oficiales, se usa una identidad provisional: azul profundo `#17324D` para navegación y títulos, verde azulado `#087E83` para acciones primarias, fondo claro `#F5F7FA`, superficies blancas `#FFFFFF` y texto oscuro `#1C2933`. Los estados de error y éxito tendrán colores y texto identificables; el color no será su única señal. Esta paleta no se presenta como identidad oficial de la universidad.
+- La interfaz ofrece un único botón de cambio entre **tema claro y oscuro**, identificado con iconos de sol y luna. Está disponible en la pantalla de acceso y en las áreas del profesor y del estudiante, tanto en computadora como en celular. El tema claro conserva el diseño actual; el oscuro adapta fondos, superficies, texto, formularios, tablas, tarjetas, mensajes y estados de foco sin cambiar la estructura ni las funciones. La elección se guarda localmente en el navegador para conservarse al recargar y al cerrar sesión; si no existe una elección previa, se usa el tema claro. El control puede operarse con teclado y anuncia de forma textual el tema al que cambiará.
 - El área del profesor utiliza un **menú lateral fijo** en computadora, con **Cursos, Cuatrimestres, Catálogo de actividades y Estudiantes**, además de la acción **Cerrar sesión**. Las notas, la asistencia y el concentrado se abren desde un curso; no tienen accesos globales en el menú.
 - Al seleccionar un curso y grupo, el profesor cambia entre **Componentes, Matrícula, Calificaciones, Asistencia y Concentrado** mediante pestañas dentro de ese curso. El curso, cuatrimestre y número de grupo permanecen visibles como contexto.
 - Tras iniciar sesión, el profesor llega a la **lista de cursos y grupos**. En celular, un botón abre el menú como panel lateral que puede cerrarse para recuperar el espacio de contenido.

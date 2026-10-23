@@ -15,6 +15,11 @@ Backend/vendor/
 Backend/writable/
 frontend/node_modules/
 frontend/dist/
+frontend/test-results/
+frontend/playwright-report/
+
+# Respaldos locales de la base de datos.
+/DB/
 
 # Archivos locales del editor y del sistema operativo.
 .idea/

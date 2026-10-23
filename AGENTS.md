@@ -2,7 +2,7 @@
 
 ## Estado actual del trabajo
 
-- El usuario autorizó la implementación del backend y la base de datos. En `frontend/` solo se permite instalar y mantener la plantilla base de Vite, React, Tailwind CSS y Motion dentro de Docker. No implementes pantallas, componentes del aplicativo, flujos, llamadas a la API ni lógica del cliente hasta que el usuario lo indique expresamente.
+- El usuario autorizó la implementación del backend, la base de datos y el frontend. Desarrolla el cliente en `frontend/` conforme a `SPECS/frontend.specs.md`, `SPECS/frontend.tasks.md` y `SPECS/frontend.criteria.md`, y verifica su integración con la API dentro de Docker.
 - Al iniciar cada sesión de trabajo, localiza y lee todos los archivos `.md` propios del proyecto, incluidos los de la raíz y `SPECS/`, antes de planificar o modificar cualquier cosa. Comprueba también los cambios existentes en el repositorio para no sobrescribir trabajo previo.
 - Trata esos archivos `.md` como la única fuente de verdad vigente para requisitos, diseño, tareas, criterios de aceptación y restricciones del proyecto. `SPECS/requerimientos-iniciales.docx` es un antecedente histórico ya incorporado a las especificaciones Markdown; no lo uses para sustituir o contradecir las decisiones documentadas en `.md`.
 - Si dos archivos `.md` se contradicen o falta un criterio necesario, identifica la discrepancia y solicita el criterio del usuario antes de convertir una interpretación en requisito confirmado. Mantén coherentes los documentos relacionados cuando el usuario resuelva una decisión.
