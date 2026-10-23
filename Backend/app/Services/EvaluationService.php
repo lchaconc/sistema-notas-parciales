@@ -39,7 +39,7 @@ class EvaluationService
         $quantity = Input::integer($data, 'cantidad_actividades', 1, 15);
         $description = Input::optionalText($data, 'descripcion', 256);
         $percentCents = Input::cents($data, 'porcentaje_total', 0, 10000);
-        $pointsCents = Input::cents($data, 'puntaje_total', 500, 10000);
+        $pointsCents = Input::cents($data, 'puntaje_por_actividad', 100, 10000);
 
         $db->transBegin();
         try {
@@ -56,7 +56,7 @@ class EvaluationService
                 'cantidad_actividades' => $quantity,
                 'descripcion' => $description,
                 'porcentaje_total' => Input::decimal($percentCents),
-                'puntaje_total' => Input::decimal($pointsCents),
+                'puntaje_por_actividad' => Input::decimal($pointsCents),
             ], true);
             $individuals = [];
             for ($number = 1; $number <= $quantity; $number++) {
@@ -64,7 +64,7 @@ class EvaluationService
                     'componente_id' => $id,
                     'numero' => $number,
                     'porcentaje_asignado' => Input::decimal(intdiv($percentCents, $quantity)),
-                    'puntaje_asignado' => Input::decimal(intdiv($pointsCents, $quantity)),
+                    'puntaje_asignado' => Input::decimal($pointsCents),
                 ];
             }
             $db->table('actividades_individuales')->insertBatch($individuals);

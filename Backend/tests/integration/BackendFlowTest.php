@@ -133,7 +133,7 @@ final class BackendFlowTest extends CIUnitTestCase
         $catalogId = (int) $this->testDb->table('catalogo_actividades')->get()->getRow('id');
         $component = $evaluation->createComponent((int) $course['id'], [
             'actividad_catalogo_id' => $catalogId, 'titulo' => 'Parcial', 'cantidad_actividades' => 1,
-            'porcentaje_total' => '2.00', 'puntaje_total' => '10.00',
+            'porcentaje_total' => '2.00', 'puntaje_por_actividad' => '10.00',
         ]);
         $enrollment = new EnrollmentService();
         $ana = $enrollment->enroll((int) $course['id'], [
@@ -211,7 +211,7 @@ final class BackendFlowTest extends CIUnitTestCase
         ]);
         $component = (new EvaluationService())->createComponent((int) $course['id'], [
             'actividad_catalogo_id' => $catalogId, 'titulo' => 'Parcial', 'cantidad_actividades' => 1,
-            'porcentaje_total' => '2.00', 'puntaje_total' => '10.00',
+            'porcentaje_total' => '2.00', 'puntaje_por_actividad' => '10.00',
         ]);
         $usage = array_column($catalog->all(), 'en_uso', 'id');
         $this->assertTrue($usage[$catalogId]);
@@ -258,7 +258,7 @@ final class BackendFlowTest extends CIUnitTestCase
         $this->assertFalse($usageAfterDelete[$catalogId]);
     }
 
-    public function testEqualDistributionCatalogLockAndGradeBoundaries(): void
+    public function testPercentageDistributionKeepsPerActivityScoreAndGradeBoundaries(): void
     {
         $courses = new CourseService();
         $quarter = $courses->createQuarter(['codigo' => '3-2025', 'fecha_inicio' => '2025-09-01', 'fecha_cierre' => '2025-12-31']);
@@ -267,12 +267,39 @@ final class BackendFlowTest extends CIUnitTestCase
         $evaluation = new EvaluationService();
         $component = $evaluation->createComponent((int) $course['id'], [
             'actividad_catalogo_id' => $catalogId, 'titulo' => 'Tres pruebas', 'cantidad_actividades' => 3,
-            'porcentaje_total' => '10.00', 'puntaje_total' => '10.00',
+            'porcentaje_total' => '10.00', 'puntaje_por_actividad' => '10.00',
         ]);
         $this->assertCount(3, $component['actividades']);
         foreach ($component['actividades'] as $activity) {
             $this->assertSame('3.33', $activity['porcentaje_asignado']);
-            $this->assertSame('3.33', $activity['puntaje_asignado']);
+            $this->assertSame('10.00', $activity['puntaje_asignado']);
+        }
+        $this->assertSame('10.00', (new EvaluationService())->components((int) $course['id'])[0]['puntaje_por_actividad']);
+        $five = $evaluation->createComponent((int) $course['id'], [
+            'actividad_catalogo_id' => $catalogId, 'titulo' => 'Cinco pruebas', 'cantidad_actividades' => 5,
+            'porcentaje_total' => '10.00', 'puntaje_por_actividad' => '10.00',
+        ]);
+        foreach ($five['actividades'] as $activity) {
+            $this->assertSame('2.00', $activity['porcentaje_asignado']);
+            $this->assertSame('10.00', $activity['puntaje_asignado']);
+        }
+        foreach (['1.00', '100.00'] as $limitScore) {
+            $limit = $evaluation->createComponent((int) $course['id'], [
+                'actividad_catalogo_id' => $catalogId, 'titulo' => 'Puntaje límite', 'cantidad_actividades' => 1,
+                'porcentaje_total' => '1.00', 'puntaje_por_actividad' => $limitScore,
+            ]);
+            $this->assertSame($limitScore, $limit['actividades'][0]['puntaje_asignado']);
+        }
+        foreach (['0.99', '100.01'] as $invalidScore) {
+            try {
+                $evaluation->createComponent((int) $course['id'], [
+                    'actividad_catalogo_id' => $catalogId, 'titulo' => 'Puntaje inválido', 'cantidad_actividades' => 1,
+                    'porcentaje_total' => '1.00', 'puntaje_por_actividad' => $invalidScore,
+                ]);
+                $this->fail('El puntaje por actividad fuera de 1 a 100 debe rechazarse.');
+            } catch (ApiError $error) {
+                $this->assertSame(400, $error->status);
+            }
         }
         foreach (['update', 'delete'] as $operation) {
             try {
@@ -286,7 +313,7 @@ final class BackendFlowTest extends CIUnitTestCase
             'nombre' => 'Eva', 'primer_apellido' => 'Uno', 'segundo_apellido' => 'Dos', 'correo' => 'eva@ucatolica.ac.cr',
         ]);
         $activityId = (int) $this->testDb->table('actividades_individuales')->where('componente_id', $component['id'])->get()->getRow('id');
-        foreach (['-1.00', '3.34'] as $invalid) {
+        foreach (['-1.00', '10.01'] as $invalid) {
             try {
                 $evaluation->saveGrade($student['id'], $activityId, ['puntos_obtenidos' => $invalid]);
                 $this->fail('La nota fuera de rango debe rechazarse.');
@@ -294,8 +321,44 @@ final class BackendFlowTest extends CIUnitTestCase
                 $this->assertSame(400, $error->status);
             }
         }
-        $evaluation->saveGrade($student['id'], $activityId, ['puntos_obtenidos' => '3.33']);
+        $evaluation->saveGrade($student['id'], $activityId, ['puntos_obtenidos' => '10.00']);
         $this->assertSame('3.33', (new ReportService())->studentGrades((int) $course['id'], $student['estudiante_id'])['resultado']);
+    }
+
+    public function testHistoricalScoreBelowNewMinimumRemainsGradable(): void
+    {
+        $courses = new CourseService();
+        $quarter = $courses->createQuarter(['codigo' => '2-2024', 'fecha_inicio' => '2024-05-01', 'fecha_cierre' => '2024-08-31']);
+        $course = $courses->createCourse(['cuatrimestre_id' => (int) $quarter['id'], 'nombre' => 'Curso histórico', 'codigo' => 'H1', 'numero_grupo' => 1]);
+        $catalogId = (int) $this->testDb->table('catalogo_actividades')->get()->getRow('id');
+        $this->testDb->table('componentes_evaluacion')->insert([
+            'curso_id' => $course['id'], 'actividad_catalogo_id' => $catalogId,
+            'titulo' => 'Componente anterior', 'cantidad_actividades' => 1,
+            'porcentaje_total' => '2.00', 'puntaje_por_actividad' => '0.33',
+        ]);
+        $componentId = (int) $this->testDb->insertID();
+        $this->testDb->table('actividades_individuales')->insert([
+            'componente_id' => $componentId, 'numero' => 1,
+            'porcentaje_asignado' => '2.00', 'puntaje_asignado' => '0.33',
+        ]);
+        $activityId = (int) $this->testDb->insertID();
+        $student = (new EnrollmentService())->enroll((int) $course['id'], [
+            'nombre' => 'Eva', 'primer_apellido' => 'Uno', 'segundo_apellido' => 'Dos',
+            'correo' => 'eva@ucatolica.ac.cr',
+        ]);
+        (new EvaluationService())->saveGrade($student['id'], $activityId, ['puntos_obtenidos' => '0.33']);
+        $this->assertSame('0.33', (new EvaluationService())->components((int) $course['id'])[0]['puntaje_por_actividad']);
+        $this->assertSame('2.00', (new ReportService())->studentGrades((int) $course['id'], $student['estudiante_id'])['resultado']);
+        try {
+            (new EvaluationService())->createComponent((int) $course['id'], [
+                'actividad_catalogo_id' => $catalogId, 'titulo' => 'Nuevo componente',
+                'cantidad_actividades' => 1, 'porcentaje_total' => '1.00',
+                'puntaje_por_actividad' => '0.33',
+            ]);
+            $this->fail('Un componente nuevo no puede tener menos de un punto por actividad.');
+        } catch (ApiError $error) {
+            $this->assertSame(400, $error->status);
+        }
     }
 
     public function testAttendanceRequiresEveryStudentAndRespectsQuarterDates(): void
@@ -353,7 +416,7 @@ final class BackendFlowTest extends CIUnitTestCase
         $catalogId = (int) $this->testDb->table('catalogo_actividades')->where('nombre', 'proyecto')->get()->getRow('id');
         $component = (new EvaluationService())->createComponent((int) $second['id'], [
             'actividad_catalogo_id' => $catalogId, 'titulo' => 'Proyecto', 'cantidad_actividades' => 1,
-            'porcentaje_total' => '2.00', 'puntaje_total' => '10.00',
+            'porcentaje_total' => '2.00', 'puntaje_por_actividad' => '10.00',
         ]);
         $activityId = (int) $this->testDb->table('actividades_individuales')->where('componente_id', $component['id'])->get()->getRow('id');
         try {
@@ -372,7 +435,7 @@ final class BackendFlowTest extends CIUnitTestCase
         $catalogId = (int) $this->testDb->table('catalogo_actividades')->get()->getRow('id');
         $component = (new EvaluationService())->createComponent((int) $course['id'], [
             'actividad_catalogo_id' => $catalogId, 'titulo' => 'Dos actividades', 'cantidad_actividades' => 2,
-            'porcentaje_total' => '4.00', 'puntaje_total' => '20.00',
+            'porcentaje_total' => '4.00', 'puntaje_por_actividad' => '10.00',
         ]);
         $student = (new EnrollmentService())->enroll((int) $course['id'], [
             'nombre' => 'Ana', 'primer_apellido' => 'Uno', 'segundo_apellido' => 'Dos', 'correo' => 'ana@ucatolica.ac.cr',

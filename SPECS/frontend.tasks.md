@@ -43,9 +43,9 @@ Cada tarea funcional incluye la comprobación de sus estados de carga, vacío, �
 ### 5. Implementar catálogo y componentes de evaluación
 
 - Construir el CRUD del catálogo. Usar `en_uso` para bloquear edición y eliminación de una actividad asociada a componentes, y actualizar ese estado después de operaciones que puedan cambiarlo. Mostrar los conflictos por nombres duplicados o cambios concurrentes sin anunciar éxito.
-- Dentro de un curso, consultar componentes y sus actividades individuales. Crear componentes con opción del catálogo, título, cantidad, descripción opcional, porcentaje y puntaje según los límites de `frontend.specs.md`.
-- Presentar el reparto de puntos y porcentaje exactamente como lo devuelve la API, sin recalcularlo ni redistribuir residuos en el cliente.
-- **Pruebas de componentes e integración:** catálogo inicial y opción «indagación y exposición» única, actividad `en_uso`, rechazo de duplicados y límites, suma de porcentajes inválida, componentes con reparto no exacto y actualización de la vista tras crear o borrar un curso.
+- Dentro de un curso, consultar componentes y sus actividades individuales. Crear componentes con opción del catálogo, título, cantidad, descripción opcional, porcentaje total y **puntaje por actividad** de `1,00` a `100,00` mediante el campo `puntaje_por_actividad` del contrato actualizado.
+- Mostrar el porcentaje repartido y el puntaje íntegro de cada actividad exactamente como los devuelve la API, sin recalcularlos en el cliente. Mostrar los componentes históricos con su puntaje individual conservado, incluso cuando sea inferior al nuevo mínimo de alta.
+- **Pruebas de componentes e integración:** catálogo inicial y opción «indagación y exposición» única, actividad `en_uso`, rechazo de duplicados y límites, suma de porcentajes inválida, cinco actividades de `10,00` puntos cada una con `2,00 %` de un componente de `10,00 %`, reparto porcentual no exacto sin dividir puntos, componente histórico intacto y actualización de la vista tras crear o borrar un curso.
 
 ### 6. Implementar estudiantes, matrícula y generación de contraseña
 

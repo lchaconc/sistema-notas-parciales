@@ -11,6 +11,10 @@ Aplicación de notas parciales con backend API en CodeIgniter 4, MySQL y fronten
 
 El backend escucha en `http://localhost:8080`, la aplicación frontend en `http://localhost:5173` y Swagger UI en `http://localhost:8081`. Vite envía las solicitudes `/api` al backend. El inicio de sesión es `POST /api/login` con `correo` y `contrasena`; devuelve un JWT válido durante una hora. `GET /api/healt` es público y comprueba el servidor y MySQL (`200` disponible, `503` si falla la base). Las demás rutas de la API exigen el token Bearer y el rol correspondiente. El contrato OpenAPI y su verificación están en [API-DOCS](API-DOCS/README.md).
 
+### Actualizar una instalación existente
+
+Antes de aplicar migraciones en una base con datos, haga un respaldo. Después ejecute `docker compose exec backend php spark migrate`. La migración de puntaje por actividad conserva los puntajes individuales y las calificaciones de los componentes existentes. Los componentes nuevos reciben el puntaje completo indicado en cada actividad, entre `1,00` y `100,00` puntos; solo su porcentaje total se divide entre las actividades.
+
 ## Conectar DBeaver a MySQL desde Windows
 
 En DBeaver, cree una conexión **MySQL** (tipo TCP/IP) con estos valores:

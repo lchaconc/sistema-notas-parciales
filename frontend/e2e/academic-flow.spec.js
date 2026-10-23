@@ -42,9 +42,18 @@ test('profesor y estudiante completan sus recorridos con la API y base temporal'
   await page.getByLabel('Título').fill('Prueba de integración');
   await page.getByLabel('Cantidad de actividades').fill('1');
   await page.getByLabel('Porcentaje total').fill('2,00');
-  await page.getByLabel('Puntaje total').fill('10,00');
+  await page.getByLabel('Puntaje por actividad').fill('10,00');
   await page.getByRole('button', { name: 'Crear componente' }).click();
   await expect(page.getByText('Componente creado.')).toBeVisible();
+
+  await page.getByLabel('Actividad del catálogo').selectOption({ index: 1 });
+  await page.getByLabel('Título').fill('Cinco actividades de diez puntos');
+  await page.getByLabel('Cantidad de actividades').fill('5');
+  await page.getByLabel('Porcentaje total').fill('10,00');
+  await page.getByLabel('Puntaje por actividad').fill('10,00');
+  await page.getByRole('button', { name: 'Crear componente' }).click();
+  const fiveActivities = page.locator('.component-item').filter({ hasText: 'Cinco actividades de diez puntos' });
+  await expect(fiveActivities.getByText('10,00 pts · 2,00 %')).toHaveCount(5);
 
   await page.getByRole('tab', { name: 'Matrícula' }).click();
   await page.getByLabel('Nombre', { exact: true }).fill('Ana');

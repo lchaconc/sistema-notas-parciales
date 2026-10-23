@@ -27,7 +27,7 @@ Todas las rutas comienzan con `/api`. Salvo `POST /api/login` y `GET /api/healt`
 | `PUT /profesor/catalogo/{id}` | `{nombre}` → actividad con `en_uso: false`; rechaza si está en uso. |
 | `DELETE /profesor/catalogo/{id}` | Elimina una opción libre. |
 | `GET /profesor/cursos/{cursoId}/componentes` | Componentes y sus actividades individuales. |
-| `POST /profesor/cursos/{cursoId}/componentes` | `{actividad_catalogo_id, titulo, cantidad_actividades, descripcion?, porcentaje_total, puntaje_total}`. |
+| `POST /profesor/cursos/{cursoId}/componentes` | `{actividad_catalogo_id, titulo, cantidad_actividades, descripcion?, porcentaje_total, puntaje_por_actividad}`. El porcentaje se reparte; el puntaje de `1,00` a `100,00` se asigna íntegro a cada actividad. |
 | `GET /profesor/calificaciones/{matriculaId}/{actividadId}` | Nota y observación vigentes de esa actividad y matrícula; ambos `null` si aún no hay calificación. Rechaza asociaciones entre cursos distintos. |
 | `GET /profesor/estudiantes` | Lista de estudiantes. |
 | `GET /profesor/cursos/{cursoId}/matriculas` | Matrículas del curso. |

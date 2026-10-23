@@ -238,10 +238,13 @@ paths:
         '500': { $ref: '#/components/responses/InternalError' }
     post:
       tags: [Evaluación]
-      summary: Crear componente y repartir su puntaje y porcentaje
+      summary: Crear componente con puntaje por actividad y porcentaje repartido
       description: |
-        Genera de 1 a 15 actividades individuales con partes iguales truncadas
-        a dos decimales. La suma de porcentajes del curso no puede superar 100 %.
+        Genera de 1 a 15 actividades individuales. Reparte solo el porcentaje
+        total en partes iguales truncadas a dos decimales, sin redistribuir el
+        residuo; asigna el puntaje por actividad íntegro a cada una. La suma de
+        porcentajes del curso no puede superar 100 %. Los componentes históricos
+        conservan los puntajes que sus actividades ya tenían asignados.
       operationId: createComponent
       requestBody:
         required: true
@@ -629,7 +632,7 @@ components:
             en_uso: { type: boolean, description: Indica si la actividad está asociada a algún componente y no puede editarse ni eliminarse. }
     ComponentInput:
       type: object
-      required: [actividad_catalogo_id, titulo, cantidad_actividades, porcentaje_total, puntaje_total]
+      required: [actividad_catalogo_id, titulo, cantidad_actividades, porcentaje_total, puntaje_por_actividad]
       properties:
         actividad_catalogo_id: { type: integer, minimum: 1 }
         titulo: { type: string, minLength: 1, description: Máximo 128 palabras. }
@@ -638,9 +641,9 @@ components:
         porcentaje_total:
           allOf: [ { $ref: '#/components/schemas/DecimalInput' } ]
           description: Entre 0 y 100; la suma de componentes del curso no puede superar 100.
-        puntaje_total:
+        puntaje_por_actividad:
           allOf: [ { $ref: '#/components/schemas/DecimalInput' } ]
-          description: Entre 5 y 100 puntos.
+          description: Entre 1 y 100 puntos; se asigna íntegro a cada actividad.
     IndividualActivity:
       type: object
       required: [componente_id, numero, porcentaje_asignado, puntaje_asignado]
@@ -649,10 +652,12 @@ components:
         componente_id: { type: integer, minimum: 1 }
         numero: { type: integer, minimum: 1, maximum: 15 }
         porcentaje_asignado: { $ref: '#/components/schemas/DecimalOutput' }
-        puntaje_asignado: { $ref: '#/components/schemas/DecimalOutput' }
+        puntaje_asignado:
+          allOf: [ { $ref: '#/components/schemas/DecimalOutput' } ]
+          description: Puntaje íntegro de esta actividad, igual al puntaje por actividad del componente nuevo; en componentes históricos conserva el valor anterior.
     Component:
       type: object
-      required: [id, curso_id, actividad_catalogo_id, titulo, cantidad_actividades, porcentaje_total, puntaje_total, actividad_catalogo, actividades]
+      required: [id, curso_id, actividad_catalogo_id, titulo, cantidad_actividades, porcentaje_total, puntaje_por_actividad, actividad_catalogo, actividades]
       properties:
         id: { type: integer, minimum: 1 }
         curso_id: { type: integer, minimum: 1 }
@@ -661,7 +666,7 @@ components:
         cantidad_actividades: { type: integer, minimum: 1, maximum: 15 }
         descripcion: { type: string, nullable: true }
         porcentaje_total: { $ref: '#/components/schemas/DecimalOutput' }
-        puntaje_total: { $ref: '#/components/schemas/DecimalOutput' }
+        puntaje_por_actividad: { $ref: '#/components/schemas/DecimalOutput' }
         actividad_catalogo: { type: string }
         actividades:
           type: array

@@ -46,10 +46,11 @@ Este plan ordena la implementación del backend según [general.md](general.md),
 
 ### 6. Implementar componentes y distribución de actividades
 
-- Crear componentes dentro del curso con actividad del catálogo, título, descripción, cantidad, porcentaje y puntaje conforme a los límites acordados.
-- Verificar que la suma de porcentajes de componentes del curso no exceda 100 %. Generar la cantidad indicada de actividades individuales con reparto igual y truncamiento a dos decimales, sin trasladar residuos.
+- Migrar `componentes_evaluacion.puntaje_total` a `puntaje_por_actividad` tomando para cada componente existente el `puntaje_asignado` ya registrado en sus actividades. Conservar notas y porcentajes históricos, incluso si el puntaje individual anterior es inferior a `1,00`; exigir el nuevo intervalo de `1,00` a `100,00` solo en altas posteriores.
+- Crear componentes dentro del curso con actividad del catálogo, título, descripción, cantidad, porcentaje total y puntaje por actividad conforme a los límites acordados.
+- Verificar que la suma de porcentajes de componentes del curso no exceda 100 %. Generar la cantidad indicada de actividades individuales repartiendo solo el porcentaje por igual y truncándolo a dos decimales, sin trasladar residuos; copiar el puntaje por actividad íntegro a cada fila.
 - Guardar componente y actividades individuales como una sola operación consistente.
-- **Pruebas unitarias:** límites de cantidad, puntaje, porcentaje y longitud; entradas con dos decimales; reparto exacto y no exacto. **Pruebas de integración:** 10 % y 10 puntos en tres actividades producen tres filas de `3,33 %` y `3,33` puntos; una operación fallida no deja filas incompletas.
+- **Pruebas unitarias:** límites de cantidad, puntaje por actividad (`1,00` a `100,00`), porcentaje y longitud; entradas con dos decimales; reparto porcentual exacto y no exacto sin dividir puntos. **Pruebas de integración:** 10 % y 10 puntos por actividad en cinco actividades producen cinco filas de `2,00 %` y `10,00` puntos; en tres actividades producen `3,33 %` y `10,00` puntos por fila; la migración conserva notas y aportes históricos, y una operación fallida no deja filas incompletas.
 
 ### 7. Implementar estudiantes y matrículas
 
@@ -62,7 +63,7 @@ Este plan ordena la implementación del backend según [general.md](general.md),
 - Registrar por matrícula y actividad individual los puntos obtenidos y la observación. Verificar que la actividad pertenezca al curso de la matrícula y que la nota esté entre cero y el puntaje asignado.
 - Permitir al profesor consultar la nota y observación previas de una actividad antes de editarlas; devolver valores nulos cuando aún no existe calificación y comprobar la pertenencia al mismo curso.
 - Calcular el aporte porcentual de cada actividad según la proporción de puntos, truncarlo a dos decimales antes de sumar y calcular el resultado del curso. Tratar la ausencia de nota como aporte cero sin confundirla con una nota explícita de `0,00`.
-- **Pruebas unitarias:** `8,50` de 10 puntos con peso de 2 % aporta `1,70 %`; reparto truncado; notas cero, máximas, ausentes y fuera de rango; suma de aportes previamente truncados. **Pruebas de integración y API:** observación de máximo 125 caracteres y rechazo de una actividad de otro curso o grupo.
+- **Pruebas unitarias:** `8,50` de 10 puntos con peso de 2 % aporta `1,70 %`; reparto porcentual truncado; notas cero, máximas, ausentes y fuera de rango; suma de aportes previamente truncados. **Pruebas de integración y API:** observación de máximo 125 caracteres y rechazo de una actividad de otro curso o grupo.
 
 ### 9. Implementar las quince sesiones y la asistencia
 

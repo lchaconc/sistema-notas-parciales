@@ -27,8 +27,8 @@ La siguiente tabla define relaciones funcionales. No prescribe nombres de tablas
 | Cuatrimestre | Identificador en formato `N-AAAA`, con `N` entre 1 y 3, fecha de inicio y fecha de cierre compartidas por sus cursos. |
 | Curso o grupo | Nombre, código, número de grupo y cuatrimestre. El mismo código puede repetirse en otros cuatrimestres o grupos; la combinación de cuatrimestre, código y número de grupo distingue un curso. |
 | Actividad del catálogo | Opción reutilizable que el profesor puede crear, consultar, editar o eliminar mientras no esté asociada a un componente. |
-| Componente de evaluación | Pertenece a un curso y refiere a una actividad del catálogo. Contiene título, descripción, cantidad de actividades individuales, porcentaje y puntaje total. |
-| Actividad individual | Pertenece a un componente y recibe una parte igual del porcentaje y del puntaje, truncada a dos decimales cuando sea necesario. |
+| Componente de evaluación | Pertenece a un curso y refiere a una actividad del catálogo. Contiene título, descripción, cantidad de actividades individuales, porcentaje total y puntaje por actividad. |
+| Actividad individual | Pertenece a un componente. Recibe una parte igual del porcentaje total, truncada a dos decimales, y el puntaje por actividad íntegro. |
 | Matrícula | Relaciona un estudiante con un curso; permite registrar sus calificaciones y asistencia en ese curso. |
 | Calificación | Registra los puntos obtenidos y una observación para una actividad individual y un estudiante matriculado. |
 | Sesión de asistencia | Pertenece a un curso y tiene una fecha. Cada curso tiene quince sesiones; solo se admite una sesión por curso y fecha. |
@@ -79,9 +79,10 @@ La siguiente tabla define relaciones funcionales. No prescribe nombres de tablas
 
 ### Componentes de evaluación
 
-- Agregar componentes a un curso mediante una actividad seleccionada del catálogo, un título de máximo 128 palabras, una cantidad entera de actividades individuales entre 1 y 15, una descripción de máximo 256 caracteres, un porcentaje con hasta dos decimales y un puntaje total de 5 a 100 puntos con hasta dos decimales.
+- Agregar componentes a un curso mediante una actividad seleccionada del catálogo, un título de máximo 128 palabras, una cantidad entera de actividades individuales entre 1 y 15, una descripción de máximo 256 caracteres, un porcentaje total con hasta dos decimales y un puntaje por actividad entre 1 y 100 puntos con hasta dos decimales. `POST /api/profesor/cursos/{cursoId}/componentes` recibe `puntaje_por_actividad`, no `puntaje_total`.
 - Rechazar la incorporación de un componente si la suma de porcentajes de todos los componentes del curso superaría el 100 %.
-- Distribuir por igual el porcentaje y el puntaje total del componente entre sus actividades individuales. Truncar cada valor asignado a dos decimales; no asignar el residuo a ninguna actividad. Ejemplo: 10 % y 10 puntos repartidos entre 3 actividades producen `3,33 %` y `3,33` puntos para cada una.
+- Distribuir por igual solo el porcentaje total del componente entre sus actividades individuales y truncar cada porcentaje asignado a dos decimales, sin asignar el residuo a ninguna. Copiar íntegro `puntaje_por_actividad` a `puntaje_asignado` de cada actividad, sin dividirlo. Ejemplo: `10,00 %`, `10,00` puntos por actividad y 5 actividades producen cinco actividades de `2,00 %` y `10,00` puntos; con 3 actividades cada una recibe `3,33 %` y `10,00` puntos.
+- Al migrar componentes creados con la regla anterior, conservar los puntajes ya asignados a sus actividades y las calificaciones registradas. El nuevo `puntaje_por_actividad` del componente toma el `puntaje_asignado` histórico de sus actividades; no se recalculan porcentajes obtenidos. El mínimo de `1,00` se valida al crear componentes nuevos, sin invalidar componentes históricos cuyo puntaje individual sea inferior.
 - Al matricular a un estudiante en el curso, poner a su disposición todas las actividades individuales de sus componentes para registrar calificaciones.
 
 ### Estudiantes y matrículas
@@ -138,13 +139,13 @@ La siguiente tabla define relaciones funcionales. No prescribe nombres de tablas
 
 - Dos cursos del mismo cuatrimestre pueden compartir código si tienen números de grupo diferentes; no se confunden sus matrículas, notas ni asistencias.
 - Una actividad del catálogo utilizada por un componente no se puede editar ni eliminar. Si se borra el curso asociado, la actividad permanece en el catálogo.
-- Para un componente de 10 % y 10 puntos con 3 actividades, cada actividad recibe `3,33 %` y `3,33` puntos, sin trasladar el residuo a la última.
+- Para un componente nuevo de `10,00 %` y `10,00` puntos por actividad con 3 actividades, cada una recibe `3,33 %` y `10,00` puntos; únicamente el residuo porcentual se descarta.
 - Para una actividad de 10 puntos y 2 %, una nota de `8,50` puntos produce un aporte de `1,70 %`.
 - Una actividad sin nota aporta cero al resultado del curso; una nota fuera del intervalo entre cero y el puntaje asignado se rechaza.
 - Un JWT vencido después de una hora no permite acceder a rutas protegidas.
 - Un correo ajeno a los dominios de `dominios_permitidos` se rechaza al crear la cuenta del profesor o matricular a un estudiante.
 - Dos correos que solo difieren en mayúsculas y minúsculas se tratan como direcciones distintas al aplicar la unicidad.
-- Un componente admite porcentaje y puntaje total con hasta dos decimales; la creación de una actividad con nombre ya presente en el catálogo se rechaza aunque cambie el uso de mayúsculas, minúsculas o tildes.
+- Un componente nuevo admite porcentaje total y puntaje por actividad con hasta dos decimales; este último debe estar entre `1,00` y `100,00`. La creación de una actividad con nombre ya presente en el catálogo se rechaza aunque cambie el uso de mayúsculas, minúsculas o tildes.
 - Se rechaza crear una sesión de asistencia con fecha fuera del intervalo inclusivo del cuatrimestre del curso.
 - Una dirección de correo asignada al profesor no se acepta para un estudiante, ni una dirección de estudiante para crear la cuenta del profesor.
 - No se guarda una segunda sesión de asistencia con la misma fecha para un mismo curso, ni una sesión sin condición para alguno de los estudiantes matriculados incluidos en ella.

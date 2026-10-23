@@ -8,6 +8,6 @@ class ComponentModel extends Model
 {
     protected $table = 'componentes_evaluacion';
     protected $primaryKey = 'id';
-    protected $allowedFields = ['curso_id', 'actividad_catalogo_id', 'titulo', 'cantidad_actividades', 'descripcion', 'porcentaje_total', 'puntaje_total'];
+    protected $allowedFields = ['curso_id', 'actividad_catalogo_id', 'titulo', 'cantidad_actividades', 'descripcion', 'porcentaje_total', 'puntaje_por_actividad'];
     protected $returnType = 'array';
 }
