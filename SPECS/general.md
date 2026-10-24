@@ -48,6 +48,8 @@ Solo el porcentaje total del componente se distribuye por igual entre sus activi
 
 Los componentes creados antes de este cambio conservan el puntaje ya asignado a cada actividad, así como sus notas y porcentajes obtenidos; no se recalifican. Al migrar sus datos, el valor mostrado como puntaje por actividad corresponde a ese puntaje individual anterior. El límite nuevo de `1,00` a `100,00` puntos se aplica a los componentes creados desde este cambio; por ello un componente histórico puede conservar un puntaje individual inferior a `1,00`.
 
+**Corrección puntual autorizada:** en el curso **Informática Aplicada 1** (`PD008`, grupo `1`, cuatrimestre `3-2026`), las siete actividades del componente **Tareas** valen `10,00` puntos cada una. Se corrigieron sus puntajes históricos de `1,42` a `10,00` sin modificar el peso de `2,14 %` de cada actividad. Este caso no cambia la regla de conservación de los demás componentes históricos.
+
 ## Estudiantes y matrícula
 
 - Para matricular a un estudiante se registran nombre, dos apellidos, correo y curso.

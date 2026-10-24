@@ -450,6 +450,52 @@ final class BackendFlowTest extends CIUnitTestCase
         $this->assertSame('3.38', $report->studentGrades((int) $course['id'], $student['estudiante_id'])['resultado']);
     }
 
+    public function testSpecificTareasCorrectionPreservesWeightsAndOtherComponents(): void
+    {
+        $courses = new CourseService();
+        $quarter = $courses->createQuarter(['codigo' => '3-2026', 'fecha_inicio' => '2026-09-01', 'fecha_cierre' => '2026-12-31']);
+        $course = $courses->createCourse([
+            'cuatrimestre_id' => (int) $quarter['id'], 'nombre' => 'Informática Aplicada 1',
+            'codigo' => 'PD008', 'numero_grupo' => 1,
+        ]);
+        $otherCourse = $courses->createCourse([
+            'cuatrimestre_id' => (int) $quarter['id'], 'nombre' => 'Otro curso',
+            'codigo' => 'OTRO', 'numero_grupo' => 1,
+        ]);
+        $catalogId = (int) $this->testDb->table('catalogo_actividades')->get()->getRow('id');
+        $evaluation = new EvaluationService();
+        $input = [
+            'actividad_catalogo_id' => $catalogId, 'titulo' => 'Tareas',
+            'cantidad_actividades' => 7, 'porcentaje_total' => '15.00',
+            'puntaje_por_actividad' => '10.00',
+        ];
+        $target = $evaluation->createComponent((int) $course['id'], $input);
+        $other = $evaluation->createComponent((int) $otherCourse['id'], $input);
+        foreach ([$target['id'], $other['id']] as $componentId) {
+            $this->testDb->table('actividades_individuales')->where('componente_id', $componentId)
+                ->update(['puntaje_asignado' => '1.42']);
+        }
+
+        require_once APPPATH . 'Database/Migrations/2026-10-24-000001_CorrectTareasActivityScore.php';
+        $migration = new \App\Database\Migrations\CorrectTareasActivityScore();
+        $migration->up();
+        $migration->up();
+
+        $targetRows = $this->testDb->table('actividades_individuales')
+            ->where('componente_id', $target['id'])->orderBy('numero')->get()->getResultArray();
+        $otherRows = $this->testDb->table('actividades_individuales')
+            ->where('componente_id', $other['id'])->orderBy('numero')->get()->getResultArray();
+        $this->assertCount(7, $targetRows);
+        $this->assertCount(7, $otherRows);
+        foreach ($targetRows as $row) {
+            $this->assertSame('10.00', $row['puntaje_asignado']);
+            $this->assertSame('2.14', $row['porcentaje_asignado']);
+        }
+        foreach ($otherRows as $row) {
+            $this->assertSame('1.42', $row['puntaje_asignado']);
+        }
+    }
+
     public function testCourseCannotBeDeletedBeforeQuarterCloses(): void
     {
         $courses = new CourseService();
