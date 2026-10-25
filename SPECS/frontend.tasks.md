@@ -4,6 +4,8 @@
 
 Este plan descompone [frontend.specs.md](frontend.specs.md) en trabajo verificable. Rigen también [general.md](general.md), [AGENTS.md](../AGENTS.md) y el contrato vigente de [API-DOCS/openapi.yaml](../API-DOCS/openapi.yaml). La plantilla base del frontend y el entorno Docker ya existen. El usuario autorizó la implementación del cliente.
 
+La tarea 12 describe la interfaz de eliminación de componentes y sus verificaciones, ahora implementada junto con la API.
+
 Cada tarea funcional incluye la comprobación de sus estados de carga, vacío, éxito y error cuando correspondan. Las pruebas se preparan y ejecutan durante la implementación de cada bloque, con datos separados de la base de desarrollo. No se añaden bibliotecas por anticipado: antes de incorporar una herramienta de prueba u otra dependencia se verifica si es necesaria, estable, mantenida y compatible con el stack acordado.
 
 ## Secuencia de trabajo
@@ -44,7 +46,7 @@ Cada tarea funcional incluye la comprobación de sus estados de carga, vacío, �
 
 - Construir el CRUD del catálogo. Usar `en_uso` para bloquear edición y eliminación de una actividad asociada a componentes, y actualizar ese estado después de operaciones que puedan cambiarlo. Mostrar los conflictos por nombres duplicados o cambios concurrentes sin anunciar éxito.
 - Dentro de un curso, consultar componentes y sus actividades individuales. Crear componentes con opción del catálogo, título, cantidad, descripción opcional, porcentaje total y **puntaje por actividad** de `1,00` a `100,00` mediante el campo `puntaje_por_actividad` del contrato actualizado.
-- Mostrar el porcentaje repartido y el puntaje íntegro de cada actividad exactamente como los devuelve la API, sin recalcularlos en el cliente. Mostrar los componentes históricos con su puntaje individual conservado, incluso cuando sea inferior al nuevo mínimo de alta.
+- Mostrar el porcentaje repartido y el puntaje íntegro de cada actividad exactamente como los devuelve la API, sin recalcularlos en el cliente. Mostrar los componentes históricos con su puntaje individual vigente, incluso cuando sea inferior al nuevo mínimo de alta, teniendo en cuenta la corrección puntual de **Tareas** indicada en [general.md](general.md).
 - **Pruebas de componentes e integración:** catálogo inicial y opción «indagación y exposición» única, actividad `en_uso`, rechazo de duplicados y límites, suma de porcentajes inválida, cinco actividades de `10,00` puntos cada una con `2,00 %` de un componente de `10,00 %`, reparto porcentual no exacto sin dividir puntos, componente histórico intacto y actualización de la vista tras crear o borrar un curso.
 
 ### 6. Implementar estudiantes, matrícula y generación de contraseña
@@ -87,6 +89,13 @@ Cada tarea funcional incluye la comprobación de sus estados de carga, vacío, �
 - Documentar los comandos para ejecutar las pruebas del frontend dentro de Docker y el resultado de las verificaciones. Revisar que no se versionen secretos y que la implementación siga las especificaciones y OpenAPI vigentes.
 - **Cierre:** ejecutar la suite unitaria, de componentes, de integración y de extremo a extremo sobre datos de prueba separados. Una funcionalidad se considera terminada solo si sus casos normales, límites y rechazos relevantes pasan y la interfaz no mezcla datos de cursos o usuarios.
 
+### 12. Eliminación individual de componentes
+
+- Añadir **Eliminar** a cada componente del curso seleccionado. Consultar `tiene_calificaciones` y presentar siempre un cuadro de confirmación propio, accesible en computadora y celular, con el curso y componente afectados. Cuando existan notas, advertir su pérdida sin impedir confirmar. No utilizar `alert()` ni `confirm()` de JavaScript.
+- Enviar `DELETE` autenticado al componente y curso correctos. Añadir `confirmar_con_notas=true` solo después de que el profesor haya visto y confirmado la advertencia. Si la API devuelve `409` por una nota agregada después de la consulta, actualizar el estado y volver a solicitar confirmación informada; cancelar nunca envía el borrado.
+- Tras el éxito, refrescar componentes y catálogo, y asegurar que calificaciones, resultados, tarjetas y concentrados consultados después reflejen las actividades restantes. Si falla la red o la API, conservar la vista y no anunciar que se eliminó. La interfaz no ofrece este control al estudiante.
+- **Pruebas previstas:** sin notas, con nota positiva, con nota `0,00`, cancelación, confirmación, aparición concurrente de notas y nueva advertencia, respuesta `404` o `403`, fallo de red, actualización de `en_uso` cuando hay o no otras asociaciones y recorrido de resultados y concentrados después del borrado. Revisar teclado, foco y legibilidad del cuadro en temas claro y oscuro y en celular. Ejecutar integración y extremo a extremo contra el backend y una base de pruebas aislada.
+
 ## Dependencias entre tareas
 
-Las tareas 1 a 3 preparan el entorno, la presentación y el acceso compartidos. La tarea 4 establece el contexto de curso para las tareas 5 a 9. La matrícula de la tarea 6 precede a la captura de notas y asistencia; el concentrado depende de esos datos. La tarea 10 reutiliza sesión, navegación y acceso a la API, pero consulta exclusivamente endpoints del estudiante. Las pruebas de la tarea 11 cierran los recorridos construidos y no sustituyen las pruebas ejecutadas durante cada tarea.
+Las tareas 1 a 3 preparan el entorno, la presentación y el acceso compartidos. La tarea 4 establece el contexto de curso para las tareas 5 a 9. La matrícula de la tarea 6 precede a la captura de notas y asistencia; el concentrado depende de esos datos. La tarea 10 reutiliza sesión, navegación y acceso a la API, pero consulta exclusivamente endpoints del estudiante. Las pruebas de la tarea 11 cierran los recorridos construidos y no sustituyen las pruebas ejecutadas durante cada tarea. La tarea 12 usa la ampliación del backend descrita en [backend.tasks.md](backend.tasks.md).

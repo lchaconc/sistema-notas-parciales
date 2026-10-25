@@ -19,5 +19,5 @@ export function useResource(loader, dependencies) {
     }
   }, dependencies);
   useEffect(() => { reload(); }, [reload]);
-  return { data, loading, error, reload };
+  return { data, loading, error, reload, setData };
 }

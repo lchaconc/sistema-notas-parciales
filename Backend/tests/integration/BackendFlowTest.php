@@ -496,6 +496,112 @@ final class BackendFlowTest extends CIUnitTestCase
         }
     }
 
+    public function testComponentDeletionRequiresFreshConfirmationAndRecalculatesViews(): void
+    {
+        $auth = new AuthService();
+        $auth->createProfessor('profesor@ucatolica.ac.cr', 'clave-prueba');
+        $token = json_decode($this->jsonRequest('POST', 'api/login', [
+            'correo' => 'profesor@ucatolica.ac.cr', 'contrasena' => 'clave-prueba',
+        ])->getJSON(), true)['data']['token'];
+        $courses = new CourseService();
+        $quarter = $courses->createQuarter(['codigo' => '1-2099', 'fecha_inicio' => '2099-01-01', 'fecha_cierre' => '2099-04-30']);
+        $course = $courses->createCourse(['cuatrimestre_id' => (int) $quarter['id'], 'nombre' => 'Curso', 'codigo' => 'C1', 'numero_grupo' => 1]);
+        $otherCourse = $courses->createCourse(['cuatrimestre_id' => (int) $quarter['id'], 'nombre' => 'Otro grupo', 'codigo' => 'C1', 'numero_grupo' => 2]);
+        $catalogId = (int) $this->testDb->table('catalogo_actividades')->get()->getRow('id');
+        $evaluation = new EvaluationService();
+        $graded = $evaluation->createComponent((int) $course['id'], [
+            'actividad_catalogo_id' => $catalogId, 'titulo' => 'Calificado', 'cantidad_actividades' => 2,
+            'porcentaje_total' => '10.00', 'puntaje_por_actividad' => '10.00',
+        ]);
+        $remaining = $evaluation->createComponent((int) $course['id'], [
+            'actividad_catalogo_id' => $catalogId, 'titulo' => 'Permanece', 'cantidad_actividades' => 1,
+            'porcentaje_total' => '5.00', 'puntaje_por_actividad' => '10.00',
+        ]);
+        $other = $evaluation->createComponent((int) $otherCourse['id'], [
+            'actividad_catalogo_id' => $catalogId, 'titulo' => 'Otro curso', 'cantidad_actividades' => 1,
+            'porcentaje_total' => '5.00', 'puntaje_por_actividad' => '10.00',
+        ]);
+        $student = (new EnrollmentService())->enroll((int) $course['id'], [
+            'nombre' => 'Ana', 'primer_apellido' => 'Uno', 'segundo_apellido' => 'Dos',
+            'correo' => 'ana@ucatolica.ac.cr',
+        ]);
+        (new AttendanceService())->create((int) $course['id'], [
+            'fecha' => '2099-01-01',
+            'asistencias' => [['matricula_id' => $student['id'], 'condicion' => 'presente']],
+        ]);
+        $activityIds = array_column($this->testDb->table('actividades_individuales')
+            ->where('componente_id', $graded['id'])->orderBy('numero')->get()->getResultArray(), 'id');
+        $evaluation->saveGrade((int) $student['id'], (int) $activityIds[0], [
+            'puntos_obtenidos' => '0.00', 'observacion' => 'Nota cero',
+        ]);
+        $evaluation->saveGrade((int) $student['id'], (int) $activityIds[1], [
+            'puntos_obtenidos' => '8.50', 'observacion' => 'Avance',
+        ]);
+        $report = new ReportService();
+        $this->assertSame('4.25', $report->studentGrades((int) $course['id'], (int) $student['estudiante_id'])['resultado']);
+        $path = 'api/profesor/cursos/' . $course['id'] . '/componentes/' . $graded['id'];
+        $listed = json_decode($this->jsonRequest('GET', 'api/profesor/cursos/' . $course['id'] . '/componentes', null, $token)->getJSON(), true)['data'];
+        $this->assertTrue($listed[0]['tiene_calificaciones']);
+        $this->assertFalse($listed[1]['tiene_calificaciones']);
+        $this->jsonRequest('DELETE', $path)->assertStatus(401);
+        $this->jsonRequest('DELETE', $path . '?confirmar_con_notas=invalido', null, $token)->assertStatus(400);
+        $this->jsonRequest('DELETE', $path, null, $token)->assertStatus(409);
+        $this->assertSame(2, $this->testDb->table('calificaciones')->countAllResults());
+        $this->jsonRequest('DELETE', 'api/profesor/cursos/' . $otherCourse['id'] . '/componentes/' . $graded['id'], null, $token)->assertStatus(404);
+        $deleted = $this->jsonRequest('DELETE', $path . '?confirmar_con_notas=true', null, $token);
+        $deleted->assertStatus(200);
+        $this->assertSame(['data' => ['eliminado' => true]], json_decode($deleted->getJSON(), true));
+        $this->jsonRequest('DELETE', $path . '?confirmar_con_notas=true', null, $token)->assertStatus(404);
+        $this->assertSame(0, $this->testDb->table('calificaciones')->countAllResults());
+        $this->assertSame(0, $this->testDb->table('actividades_individuales')->whereIn('id', $activityIds)->countAllResults());
+        $this->assertSame('0.00', $report->studentGrades((int) $course['id'], (int) $student['estudiante_id'])['resultado']);
+        $this->assertCount(1, $report->concentrate((int) $course['id'])['actividades']);
+        $this->assertCount(1, $evaluation->components((int) $course['id']));
+        $this->assertSame((int) $remaining['id'], (int) $evaluation->components((int) $course['id'])[0]['id']);
+        $this->assertSame(1, $this->testDb->table('matriculas')->countAllResults());
+        $this->assertSame(1, $this->testDb->table('sesiones_asistencia')->countAllResults());
+        $this->assertSame(1, $this->testDb->table('asistencias')->countAllResults());
+        $this->assertSame(2, $this->testDb->table('cursos')->countAllResults());
+        $this->assertSame(1, $this->testDb->table('componentes_evaluacion')->where('id', $other['id'])->countAllResults());
+        $this->assertTrue(array_column((new CatalogService())->all(), 'en_uso', 'id')[$catalogId]);
+        $evaluation->createComponent((int) $course['id'], [
+            'actividad_catalogo_id' => $catalogId, 'titulo' => 'Porcentaje liberado', 'cantidad_actividades' => 1,
+            'porcentaje_total' => '95.00', 'puntaje_por_actividad' => '10.00',
+        ]);
+    }
+
+    public function testUngradedComponentCanBeDeletedWithoutFlagAndPreservesCatalog(): void
+    {
+        $auth = new AuthService();
+        $auth->createProfessor('profesor@ucatolica.ac.cr', 'clave-prueba');
+        $token = json_decode($this->jsonRequest('POST', 'api/login', [
+            'correo' => 'profesor@ucatolica.ac.cr', 'contrasena' => 'clave-prueba',
+        ])->getJSON(), true)['data']['token'];
+        $courses = new CourseService();
+        $quarter = $courses->createQuarter(['codigo' => '1-2099', 'fecha_inicio' => '2099-01-01', 'fecha_cierre' => '2099-04-30']);
+        $course = $courses->createCourse(['cuatrimestre_id' => (int) $quarter['id'], 'nombre' => 'Curso', 'codigo' => 'C1', 'numero_grupo' => 1]);
+        $catalogId = (int) $this->testDb->table('catalogo_actividades')->get()->getRow('id');
+        $component = (new EvaluationService())->createComponent((int) $course['id'], [
+            'actividad_catalogo_id' => $catalogId, 'titulo' => 'Sin notas', 'cantidad_actividades' => 1,
+            'porcentaje_total' => '5.00', 'puntaje_por_actividad' => '10.00',
+        ]);
+        $path = 'api/profesor/cursos/' . $course['id'] . '/componentes/' . $component['id'];
+        $student = (new EnrollmentService())->enroll((int) $course['id'], [
+            'nombre' => 'Ana', 'primer_apellido' => 'Uno', 'segundo_apellido' => 'Dos',
+            'correo' => 'ana@ucatolica.ac.cr',
+        ]);
+        $password = $auth->generateStudentPassword((int) $student['estudiante_id'])['contrasena'];
+        $studentToken = json_decode($this->jsonRequest('POST', 'api/login', [
+            'correo' => 'ana@ucatolica.ac.cr', 'contrasena' => $password,
+        ])->getJSON(), true)['data']['token'];
+        $this->jsonRequest('DELETE', $path, null, $studentToken)->assertStatus(403);
+        $this->jsonRequest('DELETE', 'api/profesor/cursos/999999/componentes/' . $component['id'], null, $token)->assertStatus(404);
+        $this->jsonRequest('DELETE', $path, null, $token)->assertStatus(200);
+        $this->assertSame(0, $this->testDb->table('componentes_evaluacion')->countAllResults());
+        $this->assertSame(1, $this->testDb->table('catalogo_actividades')->countAllResults());
+        $this->assertFalse(array_column((new CatalogService())->all(), 'en_uso', 'id')[$catalogId]);
+    }
+
     public function testCourseCannotBeDeletedBeforeQuarterCloses(): void
     {
         $courses = new CourseService();

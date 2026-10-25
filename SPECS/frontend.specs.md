@@ -6,6 +6,8 @@ El frontend permite al único profesor gestionar cursos, evaluaciones, matrícul
 
 Este documento describe el comportamiento esperado del cliente. El usuario autorizó su implementación. La ejecución se organiza en [frontend.tasks.md](frontend.tasks.md) y se verifica mediante [frontend.criteria.md](frontend.criteria.md).
 
+La eliminación individual de componentes está disponible en la API y en la interfaz del profesor. Su comportamiento se verifica con pruebas de componentes y de extremo a extremo.
+
 ## Plataforma y responsabilidades
 
 - El cliente reside en `frontend/` dentro del monorepositorio y se ejecuta en Docker junto con el backend y MySQL. Usa JavaScript, Vite, React, Tailwind CSS y Motion; no usa TypeScript. Consume la API con `fetch` nativo.
@@ -49,7 +51,7 @@ La confirmación de eliminación informa que desaparecerán los datos propios de
 - El profesor consulta, crea, edita y elimina opciones mediante `GET` y `POST /api/profesor/catalogo`, y `PUT` y `DELETE /api/profesor/catalogo/{id}`. El formulario de creación y edición envía `nombre`.
 - La lista inicial contiene prueba parcial, proyecto, tarea, trabajo en clase, **indagación y exposición** como una sola opción, prueba corta y repositorio GitHub.
 - Los nombres no pueden duplicarse aunque varíen mayúsculas o tildes. El backend decide la unicidad y devuelve el conflicto; el cliente muestra ese rechazo y no considera guardado el cambio.
-- Una opción asociada a cualquier componente queda bloqueada para editarla o eliminarla. `GET /api/profesor/catalogo` entrega `en_uso` para cada actividad; si es `true`, la interfaz bloquea ambas acciones. Tras crear un componente o eliminar un curso, se vuelve a consultar el catálogo para actualizar ese estado. El backend también mantiene el rechazo de una operación que llegue cuando la actividad ya esté en uso. El catálogo permanece independiente al borrar un curso.
+- Una opción asociada a cualquier componente queda bloqueada para editarla o eliminarla. `GET /api/profesor/catalogo` entrega `en_uso` para cada actividad; si es `true`, la interfaz bloquea ambas acciones. Tras crear o eliminar un componente, o eliminar un curso, se vuelve a consultar el catálogo para actualizar ese estado. El backend también mantiene el rechazo de una operación que llegue cuando la actividad ya esté en uso. El catálogo permanece independiente al borrar un curso o componente.
 
 ### Componentes y actividades individuales
 
@@ -57,6 +59,10 @@ La confirmación de eliminación informa que desaparecerán los datos propios de
 - El formulario etiqueta el campo como **Puntaje por actividad**. Admite título de hasta 128 palabras, descripción de hasta 256 caracteres, entre 1 y 15 actividades individuales, porcentaje total con hasta dos decimales y puntaje por actividad de `1,00` a `100,00` con hasta dos decimales. La suma de porcentajes de componentes del curso no debe superar 100 %. Los errores de límite o conflicto se muestran sin perder el contexto del curso.
 - El backend distribuye solo el porcentaje total en partes iguales, truncadas a dos decimales sin redistribuir residuos, y asigna íntegro el puntaje indicado a cada actividad. La interfaz muestra `porcentaje_asignado` y `puntaje_asignado` tal como llegan de la API; no recalcula esos valores. Ejemplo: `10,00 %` y `10,00` puntos por actividad en cinco actividades producen cinco filas de `2,00 %` y `10,00` puntos; en tres actividades producen `3,33 %` y `10,00` puntos por fila.
 - Los componentes anteriores al cambio conservan sus puntajes asignados, notas y porcentajes, salvo la corrección puntual de **Tareas** documentada en [general.md](general.md). El valor `puntaje_por_actividad` mostrado para otro componente histórico puede ser inferior a `1,00`; el formulario de alta sigue exigiendo el mínimo nuevo y no recalcula datos históricos. La vista muestra los puntajes individuales vigentes devueltos por la API.
+- **Eliminación individual:** cada componente de la pestaña **Componentes** tiene una acción **Eliminar**. La acción abre siempre un cuadro de confirmación propio de la interfaz, también si no hay notas; no se emplean `alert()` ni `confirm()` de JavaScript. El cuadro identifica el curso, grupo y componente y explica que desaparecerán sus actividades, notas y observaciones, mientras permanecen el curso, las matrículas, la asistencia, los demás componentes y la opción del catálogo.
+- La respuesta de componentes incluye `tiene_calificaciones`. Cuando sea `true`, el cuadro destaca que el componente está en uso y que se perderán calificaciones registradas, incluida una nota `0,00`; ofrece **Cancelar** y **Eliminar componente** sin bloquear esta última acción. El profesor puede eliminarlo incluso si el cuatrimestre terminó. Cancelar cierra el cuadro sin enviar `DELETE`.
+- Tras confirmar con advertencia, el cliente solicitará `DELETE /api/profesor/cursos/{cursoId}/componentes/{componenteId}?confirmar_con_notas=true`; si no había calificaciones, omitirá el parámetro. Si la API devuelve `409` porque aparecieron notas entre la consulta y el borrado, la interfaz no anunciará éxito: actualizará la información y solicitará otra confirmación con la advertencia antes de reenviar la solicitud. Ante otro rechazo o fallo de red conserva el componente y muestra el motivo.
+- Tras una respuesta exitosa, se actualizan desde la API los componentes y el catálogo; las consultas de calificaciones, tarjetas, resultados y concentrados se refrescan cuando se visiten o estén abiertas. La opción del catálogo deja de aparecer `en_uso` solo cuando no queda asociada a otro componente. El cliente no calcula ni mantiene copias propias de notas o resultados eliminados.
 
 ### Estudiantes, matrícula y contraseñas
 

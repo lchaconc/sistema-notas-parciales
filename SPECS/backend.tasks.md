@@ -4,6 +4,8 @@
 
 Este plan ordena la implementación del backend según [general.md](general.md), [backend.specs.md](backend.specs.md), [database.specs.md](database.specs.md) y [AGENTS.md](../AGENTS.md). El usuario ya autorizó implementar el backend y la base de datos. Cada paso incluye las pruebas que deben ejecutarse al implementarlo. El contrato HTTP concreto se documenta en [backend.api.md](backend.api.md).
 
+Los pasos 1 a 12 corresponden al alcance ya desarrollado. El paso 13 describe la eliminación individual de componentes, implementada en el backend y su contrato de API; la interfaz se planifica por separado.
+
 ## Secuencia de trabajo
 
 ### 1. Preparar y comprobar el entorno Docker
@@ -89,8 +91,15 @@ Este plan ordena la implementación del backend según [general.md](general.md),
 - Ejecutar toda la suite en un entorno limpio: pruebas unitarias, de integración con MySQL y de API. Completar un recorrido de extremo a extremo del backend desde la creación del profesor hasta las consultas, la descarga y la eliminación de un curso.
 - Revisar autenticación y autorizaciones en cada ruta, manejo de errores, secretos fuera del repositorio, integridad transaccional y ausencia de datos cruzados entre cursos o usuarios.
 - Documentar configuración, migraciones, comando inicial del profesor, ejecución de pruebas y resultados. Corregir fallos detectados y repetir únicamente las comprobaciones afectadas y las obligatorias de la suite.
-- **Criterio de cierre:** cada regla de `backend.specs.md` tiene evidencia de verificación; la suite completa pasa y no quedan fallos conocidos en los flujos acordados.
+- **Criterio de cierre del alcance original (pasos 1 a 12):** sus reglas tienen evidencia de verificación; la suite completa pasa y no quedan fallos conocidos en esos flujos. El paso 13 tiene sus propias pruebas de integración y de contrato.
+
+### 13. Borrar un componente individual (backend implementado)
+
+- Extender la consulta de componentes con `tiene_calificaciones` calculado a partir de notas existentes, incluida `0,00`, sin agregar columna persistida. Añadir `DELETE /api/profesor/cursos/{cursoId}/componentes/{componenteId}` con JWT de profesor y comprobación de pertenencia al curso.
+- Comprobar las calificaciones nuevamente dentro de la operación transaccional de `DELETE`, coordinando esa comprobación con escrituras concurrentes de notas para el mismo componente. Sin `confirmar_con_notas=true`, responder `409` y no modificar datos si hay notas. Con confirmación informada, eliminar atómicamente el componente, actividades individuales, calificaciones y observaciones. Permitirlo antes o después del cierre del cuatrimestre y conservar curso, estudiantes, matrículas, asistencias, catálogo y otros componentes.
+- Tras el borrado, devolver la respuesta especificada y comprobar que consultas de componentes, `en_uso`, resultados y concentrados se obtienen de los datos restantes. La ruta y su campo figuran en OpenAPI y deben mantenerse alineados con `Routes.php`.
+- **Pruebas:** JWT ausente y rol estudiante; curso o componente ajeno e inexistente; borrado sin notas; nota `0,00`; borrado con notas rechazado sin confirmación; borrado confirmado con todas sus dependencias; preservación de otros cursos y componentes; recalculado de resultado y concentrado; liberación del porcentaje y cambio de `en_uso` solo al desaparecer la última asociación; fallo transaccional sin borrado parcial; repetición de la solicitud después del éxito.
 
 ## Pruebas del frontend relacionadas con este plan
 
-La planificación detallada del frontend se hará por separado. Su implementación deberá incluir pruebas de funciones auxiliares con lógica propia, componentes y flujos de formularios, tablas y tarjetas, además de recorridos de extremo a extremo con esta API. Deben verificarse el cierre de sesión al vencer el JWT, la separación de permisos, los errores de validación, la confirmación de eliminación y la concordancia entre los datos mostrados y los entregados por el backend. El estudiante solo visualiza su concentrado; el profesor también puede descargarlo.
+La planificación detallada del frontend se hará por separado. Su implementación deberá incluir pruebas de funciones auxiliares con lógica propia, componentes y flujos de formularios, tablas y tarjetas, además de recorridos de extremo a extremo con esta API. Deben verificarse el cierre de sesión al vencer el JWT, la separación de permisos, los errores de validación, la confirmación de eliminación y la concordancia entre los datos mostrados y los entregados por el backend. El estudiante solo visualiza su concentrado; el profesor también puede descargarlo. Para la ampliación del paso 13, se añade la prueba del cuadro de confirmación y advertencia documentada en [frontend.tasks.md](frontend.tasks.md).

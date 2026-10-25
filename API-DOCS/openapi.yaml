@@ -258,6 +258,37 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '500': { $ref: '#/components/responses/InternalError' }
+  /profesor/cursos/{cursoId}/componentes/{componenteId}:
+    parameters:
+      - $ref: '#/components/parameters/CursoId'
+      - $ref: '#/components/parameters/ComponenteId'
+    delete:
+      tags: [Evaluación]
+      summary: Eliminar un componente de evaluación
+      description: |
+        Puede eliminarse en cualquier momento del cuatrimestre. La interfaz debe
+        pedir confirmación antes de llamar esta operación, incluso sin notas.
+        Si hay alguna calificación registrada, incluida 0,00, y no se envía
+        confirmar_con_notas=true, responde 409 sin modificar datos. Tras la
+        confirmación informada, elimina el componente, sus actividades individuales,
+        calificaciones y observaciones. Conserva el curso, las matrículas,
+        asistencias, demás componentes y actividades del catálogo. Los resultados
+        y concentrados se calculan con los datos restantes en consultas posteriores.
+      operationId: deleteComponent
+      parameters:
+        - name: confirmar_con_notas
+          in: query
+          required: false
+          description: Enviar true solo tras advertir al profesor sobre la pérdida de calificaciones y recibir su confirmación.
+          schema: { type: boolean, default: false }
+      responses:
+        '200': { $ref: '#/components/responses/Deleted' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '500': { $ref: '#/components/responses/InternalError' }
   /profesor/calificaciones/{matriculaId}/{actividadId}:
     get:
       tags: [Evaluación]
@@ -484,6 +515,11 @@ components:
       in: path
       required: true
       schema: { type: integer, minimum: 1 }
+    ComponenteId:
+      name: componenteId
+      in: path
+      required: true
+      schema: { type: integer, minimum: 1 }
     EstudianteId:
       name: estudianteId
       in: path
@@ -657,7 +693,7 @@ components:
           description: Puntaje íntegro de esta actividad, igual al puntaje por actividad del componente nuevo; en componentes históricos conserva el valor anterior.
     Component:
       type: object
-      required: [id, curso_id, actividad_catalogo_id, titulo, cantidad_actividades, porcentaje_total, puntaje_por_actividad, actividad_catalogo, actividades]
+      required: [id, curso_id, actividad_catalogo_id, titulo, cantidad_actividades, porcentaje_total, puntaje_por_actividad, actividad_catalogo, tiene_calificaciones, actividades]
       properties:
         id: { type: integer, minimum: 1 }
         curso_id: { type: integer, minimum: 1 }
@@ -668,6 +704,9 @@ components:
         porcentaje_total: { $ref: '#/components/schemas/DecimalOutput' }
         puntaje_por_actividad: { $ref: '#/components/schemas/DecimalOutput' }
         actividad_catalogo: { type: string }
+        tiene_calificaciones:
+          type: boolean
+          description: Verdadero si alguna actividad tiene una calificación registrada, incluida 0,00; se calcula al consultar.
         actividades:
           type: array
           items: { $ref: '#/components/schemas/IndividualActivity' }

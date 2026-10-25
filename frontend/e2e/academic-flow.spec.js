@@ -97,6 +97,7 @@ test('profesor y estudiante completan sus recorridos con la API y base temporal'
   await page.getByRole('button', { name: 'Iniciar sesión' }).click();
   await expect(page.getByRole('heading', { name: 'Mis cursos' })).toBeVisible();
   await page.getByRole('button', { name: /Curso de integración/ }).click();
+  await expect(page.getByRole('button', { name: 'Eliminar', exact: true })).toHaveCount(0);
   await expect(page.getByText('1,70 % obtenido')).toBeVisible();
   await expect(page.getByText('Buen trabajo')).toBeVisible();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
@@ -112,4 +113,28 @@ test('profesor y estudiante completan sus recorridos con la API y base temporal'
   await expect(page.getByText('Contraseña actualizada.')).toBeVisible();
   await logout(page, mobile);
   await expect(page.getByRole('button', { name: 'Iniciar sesión' })).toBeVisible();
+
+  await page.getByLabel('Correo electrónico').fill('profesor@ucatolica.ac.cr');
+  await page.getByLabel('Contraseña').fill(process.env.E2E_PROFESSOR_PASSWORD || 'e2e-fixture-only');
+  await page.getByRole('button', { name: 'Iniciar sesión' }).click();
+  await page.locator('.course-item').filter({ hasText: courseCode }).getByRole('button', { name: 'Abrir', exact: true }).click();
+  const gradedComponent = page.locator('.component-item').filter({ hasText: 'Prueba de integración' });
+  await gradedComponent.getByRole('button', { name: 'Eliminar', exact: true }).click();
+  await expect(page.getByRole('dialog', { name: 'Eliminar componente' }).getByText(/tiene calificaciones registradas/)).toBeVisible();
+  await page.getByRole('dialog').getByRole('button', { name: 'Cancelar' }).click();
+  await expect(gradedComponent).toBeVisible();
+  await gradedComponent.getByRole('button', { name: 'Eliminar', exact: true }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Eliminar componente' }).click();
+  await expect(page.getByText(/Componente eliminado/)).toBeVisible();
+  await expect(gradedComponent).toHaveCount(0);
+  await page.getByRole('tab', { name: 'Concentrado' }).click();
+  await expect(page.getByText('1,70 % obtenido')).toHaveCount(0);
+  await page.getByRole('tab', { name: 'Componentes' }).click();
+  await expect(fiveActivities).toBeVisible();
+  await fiveActivities.getByRole('button', { name: 'Eliminar', exact: true }).click();
+  await expect(page.getByRole('dialog').getByText(/tiene calificaciones registradas/)).toHaveCount(0);
+  await page.getByRole('dialog').getByRole('button', { name: 'Eliminar componente' }).click();
+  await expect(page.getByText('Este curso todavía no tiene componentes.')).toBeVisible();
+  await navigate(page, 'Catálogo de actividades', mobile);
+  await expect(page.getByRole('button', { name: 'Editar' }).first()).toBeEnabled();
 });

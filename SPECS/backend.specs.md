@@ -6,6 +6,8 @@ El backend ofrece una API para gestionar cursos, estudiantes, evaluaciones, cali
 
 **Alcance de este documento:** comportamiento y responsabilidades del backend. No define rutas HTTP concretas, nombres de tablas, estructura exacta de respuestas, bibliotecas JWT o diseño físico de la base de datos.
 
+La eliminación individual de componentes está implementada en el backend y documentada en [backend.api.md](backend.api.md) y OpenAPI. Su control visual en el frontend sigue pendiente.
+
 ## Plataforma y organización
 
 - El backend reside en una carpeta propia dentro del monorepositorio, utiliza PHP y CodeIgniter, se conecta a MySQL y se ejecuta en contenedores Docker.
@@ -85,6 +87,9 @@ La siguiente tabla define relaciones funcionales. No prescribe nombres de tablas
 - Al migrar componentes creados con la regla anterior, conservar los puntajes ya asignados a sus actividades y las calificaciones registradas. El nuevo `puntaje_por_actividad` del componente toma el `puntaje_asignado` histórico de sus actividades; no se recalculan porcentajes obtenidos. El mínimo de `1,00` se valida al crear componentes nuevos, sin invalidar componentes históricos cuyo puntaje individual sea inferior.
 - La corrección puntual posterior de las siete actividades de **Tareas** en **Informática Aplicada 1** (`PD008`, grupo `1`, cuatrimestre `3-2026`) establece `10,00` puntos por actividad y conserva sus porcentajes de `2,14 %`; se documenta en [general.md](general.md). No se extiende a los demás componentes anteriores.
 - Al matricular a un estudiante en el curso, poner a su disposición todas las actividades individuales de sus componentes para registrar calificaciones.
+- **Eliminación individual:** permitir al profesor eliminar un componente identificado dentro de su curso en cualquier momento, sin aplicar la restricción de cierre que corresponde a la eliminación del curso. La consulta de componentes informa `tiene_calificaciones` según la existencia de al menos una nota registrada en cualquiera de sus actividades; `0,00` cuenta como nota. No se persiste este indicador.
+- La API exige confirmación explícita del borrado cuando hay calificaciones. Si se solicita sin indicar que el profesor confirmó la pérdida de notas y existen notas en ese instante, rechaza la operación con un conflicto identificable para que el frontend muestre una advertencia y solicite otra confirmación. Comprueba este estado dentro de una operación transaccional coordinada con las escrituras de notas para evitar que una nota nueva eluda la advertencia. Tras la confirmación informada, permite borrar incluso componentes calificados. La interfaz solicita confirmación previa también cuando no hay notas.
+- La eliminación confirmada borra atómicamente el componente, todas sus actividades individuales y las calificaciones y observaciones ligadas a ellas. No borra el curso, sus matrículas y estudiantes, asistencias, cuatrimestre, otros componentes o actividades del catálogo. Las consultas posteriores calculan resultado y concentrados con las actividades restantes; al retirar el porcentaje del componente, vuelve a quedar disponible esa parte del máximo de 100 % del curso. El indicador `en_uso` de la actividad del catálogo se actualiza según las asociaciones restantes.
 
 ### Estudiantes y matrículas
 
@@ -154,3 +159,4 @@ La siguiente tabla define relaciones funcionales. No prescribe nombres de tablas
 - Un estudiante matriculado en varios cursos conserva una sola cuenta y puede consultar únicamente sus propios datos agrupados por curso.
 - El concentrado visible del profesor y su archivo `.xlsx` para un curso y grupo contienen las mismas notas y porcentajes obtenidos; el estudiante no dispone de esa descarga.
 - Al eliminar un curso después del cierre del cuatrimestre, desaparecen sus datos propios y se conservan estudiantes, cuatrimestre y actividades del catálogo.
+- Al borrar un componente sin calificaciones, o uno calificado tras confirmar la advertencia, desaparecen solo él y sus datos dependientes. Un borrado sin confirmación informada ante notas existentes no cambia la base de datos. Resultados, concentrados y `en_uso` reflejan de inmediato los datos restantes.
