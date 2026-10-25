@@ -12,16 +12,16 @@ const tabs = [
   { id: 'concentrado', label: 'Concentrado' },
 ];
 
-export default function CourseWorkspace({ api, course, onBack }) {
+export default function CourseWorkspace({ api, course, onBack, onDirtyChange, requestNavigation }) {
   const [tab, setTab] = useState('componentes');
   return <>
-    <button type="button" className="back-link" onClick={onBack}>← Volver a cursos</button>
+    <button type="button" className="back-link" onClick={() => requestNavigation(onBack)}>← Volver a cursos</button>
     <SectionTitle eyebrow={courseLabel(course)} title={course.nombre} description={`${course.fecha_inicio} — ${course.fecha_cierre}`} />
-    <TabBar tabs={tabs} active={tab} onChange={setTab} />
+    <TabBar tabs={tabs} active={tab} onChange={(next) => requestNavigation(() => setTab(next))} />
     <div className="tab-content">
       {tab === 'componentes' && <ComponentsPanel api={api} course={course} />}
       {tab === 'matricula' && <EnrollmentPanel api={api} course={course} />}
-      {tab === 'calificaciones' && <GradesPanel api={api} course={course} />}
+      {tab === 'calificaciones' && <GradesPanel api={api} course={course} onDirtyChange={onDirtyChange} />}
       {tab === 'asistencia' && <AttendancePanel api={api} course={course} />}
       {tab === 'concentrado' && <ProfessorConcentratePanel api={api} course={course} />}
     </div>

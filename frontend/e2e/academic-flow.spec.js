@@ -64,14 +64,25 @@ test('profesor y estudiante completan sus recorridos con la API y base temporal'
   await expect(page.getByText('Ana Solís Rojas')).toBeVisible();
 
   await page.getByRole('tab', { name: 'Calificaciones' }).click();
-  await page.getByLabel('Estudiante matriculado').selectOption({ index: 1 });
-  await page.getByLabel('Actividad individual').selectOption({ index: 1 });
-  await page.getByLabel('Puntos obtenidos').fill('8,50');
+  await page.getByRole('spinbutton', { name: /Nota de Ana Solís Rojas · Prueba de integración · Actividad 1/ }).fill('8.50');
+  await page.getByRole('button', { name: /Observación/ }).first().click();
   await page.getByLabel('Observación (opcional)').fill('Buen trabajo');
-  await page.getByRole('button', { name: 'Guardar calificación' }).click();
+  await page.getByRole('button', { name: 'Volver a la tabla' }).click();
+  await page.getByRole('button', { name: /Guardar nota y observación de Ana Solís Rojas · Prueba de integración · Actividad 1/ }).click();
   await expect(page.getByText('Calificación guardada.')).toBeVisible();
+  await expect(page.locator('.grades-table').getByText('1,70 % obtenido')).toBeVisible();
 
+  await page.getByRole('spinbutton', { name: /Nota de Ana Solís Rojas · Cinco actividades de diez puntos · Actividad 1/ }).fill('7');
+  await page.getByRole('button', { name: /Guardar nota y observación de Ana Solís Rojas · Cinco actividades de diez puntos · Actividad 1/ }).click();
+  await expect(page.locator('.grades-table').getByText('1,40 % obtenido')).toBeVisible();
+  await page.getByRole('spinbutton', { name: /Nota de Ana Solís Rojas · Cinco actividades de diez puntos · Actividad 2/ }).fill('4');
   await page.getByRole('tab', { name: 'Asistencia' }).click();
+  await expect(page.getByRole('dialog', { name: 'Cambios sin guardar' })).toBeVisible();
+  await page.getByRole('button', { name: 'Continuar editando' }).click();
+  await expect(page.getByRole('heading', { name: 'Calificaciones' })).toBeVisible();
+  await page.getByRole('tab', { name: 'Asistencia' }).click();
+  await page.getByRole('button', { name: 'Salir sin guardar' }).click();
+
   await page.getByLabel('Fecha').fill('2098-01-08');
   await page.getByLabel('Condición de Ana Solís Rojas').selectOption('presente');
   await page.getByRole('button', { name: 'Crear sesión' }).click();
@@ -132,7 +143,7 @@ test('profesor y estudiante completan sus recorridos con la API y base temporal'
   await page.getByRole('tab', { name: 'Componentes' }).click();
   await expect(fiveActivities).toBeVisible();
   await fiveActivities.getByRole('button', { name: 'Eliminar', exact: true }).click();
-  await expect(page.getByRole('dialog').getByText(/tiene calificaciones registradas/)).toHaveCount(0);
+  await expect(page.getByRole('dialog').getByText(/tiene calificaciones registradas/)).toBeVisible();
   await page.getByRole('dialog').getByRole('button', { name: 'Eliminar componente' }).click();
   await expect(page.getByText('Este curso todavía no tiene componentes.')).toBeVisible();
   await navigate(page, 'Catálogo de actividades', mobile);

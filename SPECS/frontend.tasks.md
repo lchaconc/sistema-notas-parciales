@@ -4,6 +4,8 @@
 
 Este plan descompone [frontend.specs.md](frontend.specs.md) en trabajo verificable. Rigen también [general.md](general.md), [AGENTS.md](../AGENTS.md) y el contrato vigente de [API-DOCS/openapi.yaml](../API-DOCS/openapi.yaml). La plantilla base del frontend y el entorno Docker ya existen. El usuario autorizó la implementación del cliente.
 
+La reestructuración de la tarea 7 se implementa en el cliente y se verifica mediante pruebas de componentes y recorridos de navegador.
+
 La tarea 12 describe la interfaz de eliminación de componentes y sus verificaciones, ahora implementada junto con la API.
 
 Cada tarea funcional incluye la comprobación de sus estados de carga, vacío, éxito y error cuando correspondan. Las pruebas se preparan y ejecutan durante la implementación de cada bloque, con datos separados de la base de desarrollo. No se añaden bibliotecas por anticipado: antes de incorporar una herramienta de prueba u otra dependencia se verifica si es necesaria, estable, mantenida y compatible con el stack acordado.
@@ -56,11 +58,14 @@ Cada tarea funcional incluye la comprobación de sus estados de carga, vacío, �
 - Actualizar la matrícula y, si ya existían sesiones, la asistencia del curso para mostrar los registros iniciales `justificado` del estudiante incorporado tarde.
 - **Pruebas de componentes e integración:** reutilización de un estudiante en varios cursos, correo exacto, duplicado, dominio rechazado, contraseña mostrada una sola vez en el flujo y asistencia previa tras matrícula tardía.
 
-### 7. Implementar captura de calificaciones y observaciones
+### 7. Reestructurar la captura de calificaciones y observaciones
 
-- En la pestaña **Calificaciones**, seleccionar primero el estudiante matriculado y luego una actividad individual del curso. Consultar su nota y observación previas al abrir el formulario; distinguir `null` de una nota `0,00`.
-- Enviar puntos obtenidos y observación con los límites especificados. Mostrar los porcentajes y el resultado devueltos por la API sin reproducir sus reglas de cálculo en el cliente. Después de guardar, volver a consultar los datos afectados.
-- **Pruebas de componentes e integración:** nota nueva, nota cero, observación preexistente editable, puntos negativos o superiores al máximo, longitud de observación, cambio de estudiante o actividad sin mezclar datos y aporte mostrado de `1,70 %` para `8,50` sobre 10 puntos con peso de 2 %.
+- Aplicar los criterios confirmados para observaciones, guardado por celda, porcentaje visible y cambios sin guardar, registrados en `general.md`, `frontend.specs.md` y los criterios de aceptación.
+- En la pestaña **Calificaciones**, sustituir el flujo de selección sucesiva por una tabla editable para el curso y grupo abiertos: estudiantes matriculados en filas, actividades individuales en columnas e identificadores correctos en cada intersección. Conservar encabezados y contexto legibles en computadora y celular, desplazamiento horizontal, temas claro y oscuro y navegación por teclado.
+- Obtener el estado inicial de las notas desde `GET /api/profesor/cursos/{cursoId}/concentrado` y los puntajes máximos desde `GET /api/profesor/cursos/{cursoId}/componentes`. Distinguir `null` de `0,00`, y ofrecer en cada celda un `<input type="number">`, un acceso al editor de observación y un botón de guardado con icono de disquete y nombre accesible. Al abrir el editor, consultar la observación anterior con el `GET` individual.
+- Validar puntos obtenidos con hasta dos decimales, entre cero y el puntaje asignado a esa actividad. No admitir guardado de observación sin nota válida. Al pulsar un disquete, usar `PUT /api/profesor/calificaciones/{matriculaId}/{actividadId}` con nota y observación de **esa celda**; no enviar cambios pendientes de las otras. Tras éxito, consultar el porcentaje obtenido actualizado y mostrarlo debajo de la nota. Informar carga, éxito y error en la celda; el cliente no recalcula aportes ni resultados.
+- Detectar celdas modificadas sin guardar. Al cambiar de pestaña o salir del curso, advertir y ofrecer continuar editando o salir descartando; no guardar automáticamente. Guardar una celda despeja únicamente su propio estado pendiente. Conservar navegación por teclado, foco, desplazamiento horizontal en celular y temas claro y oscuro.
+- **Pruebas unitarias, de componentes e integración:** asociación de celda a matrícula y actividad, edición de muchas notas consecutivas, nota nueva, nota cero, valor pendiente, límites y rechazos, observación anterior editable, observación sin nota rechazada, guardado individual con disquete mientras otras celdas siguen pendientes, porcentaje obtenido actualizado desde la API, advertencia al cambiar de pestaña o curso, cancelar salida, descartar cambios, fallos HTTP y de red, grupos con el mismo código, foco y recorrido por teclado, desplazamiento en celular y legibilidad en ambos temas.
 
 ### 8. Implementar sesiones y asistencia
 
@@ -84,7 +89,7 @@ Cada tarea funcional incluye la comprobación de sus estados de carga, vacío, �
 
 ### 11. Verificar recorridos completos, accesibilidad y entrega
 
-- Ejecutar pruebas de extremo a extremo dentro de Docker para el recorrido principal del profesor: iniciar sesión, crear cuatrimestre y curso, crear componente, matricular, registrar nota y asistencia, consultar y descargar concentrado. Cubrir también el recorrido del estudiante: iniciar sesión, consultar cursos, tarjetas, asistencia y tabla, cambiar contraseña y cerrar sesión.
+- Ejecutar pruebas de extremo a extremo dentro de Docker para el recorrido principal del profesor: iniciar sesión, crear cuatrimestre y curso, crear componente, matricular, registrar varias notas mediante los disquetes de la tabla, editar una observación, consultar y descargar concentrado y registrar asistencia. Cubrir también el recorrido del estudiante: iniciar sesión, consultar cursos, tarjetas, asistencia y tabla, cambiar contraseña y cerrar sesión.
 - Repetir los recorridos críticos en computadora y celular; comprobar menú, pestañas, formularios, tarjetas y tablas con teclado y mensajes legibles. Verificar carga, vacío, errores de red y API, recarga de sesión y vencimiento del JWT.
 - Documentar los comandos para ejecutar las pruebas del frontend dentro de Docker y el resultado de las verificaciones. Revisar que no se versionen secretos y que la implementación siga las especificaciones y OpenAPI vigentes.
 - **Cierre:** ejecutar la suite unitaria, de componentes, de integración y de extremo a extremo sobre datos de prueba separados. Una funcionalidad se considera terminada solo si sus casos normales, límites y rechazos relevantes pasan y la interfaz no mezcla datos de cursos o usuarios.

@@ -29,6 +29,26 @@ h1,h2,h3,h4,p { margin-top:0; } h1,h2,h3,h4 { color:#17324d; letter-spacing:-.02
 .result-strip { background:#17324d; color:white; border-radius:.78rem; padding:1.1rem 1.4rem; margin-bottom:1.25rem; display:flex; justify-content:space-between; align-items:center; gap:1rem; } .result-strip .eyebrow { color:#9de0de; } .result-strip strong { display:block; font-size:1.8rem; line-height:1; } .result-strip p { margin:0; color:#bcd1dc; font-size:.84rem; } .grade-card { border:1px solid #dfe7ec; background:white; border-radius:.78rem; padding:1.2rem; box-shadow:0 2px 9px #17324d08; } .grade-card-top { display:flex; justify-content:space-between; gap:.6rem; } .grade-card h3 { margin:.3rem 0 1.25rem; } .grade-value { padding:.75rem 0; border-top:1px solid #e6ecef; border-bottom:1px solid #e6ecef; } .grade-value small,.grade-value strong { display:block; } .grade-value small,.observation small { color:#70808c; } .grade-value strong { font-size:1.4rem; color:#17324d; margin-top:.2rem; } .observation { margin-top:.8rem; } .observation p { margin:.3rem 0 0; color:#465c69; font-size:.85rem; line-height:1.5; } .status-chip { display:inline-block; border-radius:999px; padding:.3rem .7rem; text-transform:capitalize; font-weight:700; } .status-presente { color:#22684a!important; background:#eaf6ee; } .status-ausente { color:#a14242!important; background:#fff0ef; } .status-justificado { color:#816525!important; background:#fff7df; }
 .dialog-backdrop { position:fixed; inset:0; z-index:100; display:grid; place-items:center; padding:1rem; background:#10283a99; } .dialog { width:min(100%,29rem); background:white; padding:1.5rem; border-radius:.78rem; box-shadow:0 22px 80px #10283a66; } .dialog h3 { margin-bottom:.6rem; } .dialog p { color:#536977; line-height:1.55; } .dialog-actions { display:flex; justify-content:flex-end; gap:.55rem; margin-top:1.3rem; } .mobile-scrim { display:none; }
 .dialog .feedback { margin-top:.8rem; }
+.grades-panel { overflow:hidden; }
+.grades-scroll { border:1px solid #e1e8ec; border-radius:.65rem; }
+.grades-table { min-width:max-content; }
+.grades-table th,.grades-table td { min-width:13.5rem; }
+.grades-table .sticky-column { position:sticky; left:0; z-index:1; min-width:15rem; max-width:17rem; background:white; border-right:1px solid #e1e8ec; }
+.grades-table thead .sticky-column { z-index:2; background:#f5f8fa; }
+.grades-table th strong,.grades-table th small { display:block; }
+.grades-table th small { margin-top:.3rem; font-weight:500; text-transform:none; letter-spacing:0; }
+.grades-table tbody th small { color:#6d7f89; font-size:.74rem; overflow-wrap:anywhere; }
+.grade-edit-cell { min-width:13.5rem; transition:background .15s ease; }
+.grade-edit-dirty { background:#f1fafa; box-shadow:inset 3px 0 #21abb0; }
+.grade-edit-controls { display:flex; align-items:center; gap:.35rem; }
+.grade-edit-controls input { width:7.4rem; min-width:0; padding:.48rem .5rem; border:1px solid #c6d5df; border-radius:.4rem; background:white; color:#17324d; }
+.grade-save-button { display:grid; place-items:center; width:2.1rem; height:2.1rem; flex:none; border:1px solid #087e83; border-radius:.4rem; background:#e5f3f3; color:#087e83; }
+.grade-save-button:hover:not(:disabled) { background:#cce9e8; }
+.grade-edit-meta { display:flex; align-items:center; justify-content:space-between; gap:.45rem; margin-top:.4rem; color:#607584; font-size:.73rem; }
+.grade-edit-meta .text-button { font-size:.73rem; white-space:nowrap; }
+.grade-cell-error,.grade-cell-success { display:block; margin-top:.35rem; line-height:1.35; }
+.grade-cell-error { color:#a14242; }.grade-cell-success { color:#22684a; }
+.grade-editor-hint { font-size:.8rem; margin:.8rem 0 0; }
 @media(max-width:1120px) { .two-column { grid-template-columns:1fr; } }
 @media(max-width:760px) { .sidebar { position:fixed; left:0; transform:translateX(-100%); transition:transform .18s ease; width:min(85vw,18rem); } .sidebar-open { transform:translateX(0); } .mobile-scrim { display:block; position:fixed; inset:0; z-index:20; border:0; background:#10283a77; } .menu-button { display:inline-block; } .topbar { justify-content:flex-start; padding:0 1rem; gap:.75rem; } .role-pill { margin-left:auto; } .workspace { padding:1.25rem .95rem 3rem; } .section-title { align-items:start; flex-direction:column; } .section-action { width:100%; } .attendance-header { grid-template-columns:repeat(2,minmax(0,1fr)); } .session-count { grid-column:1/-1; justify-self:start; padding:0; } .course-item { flex-wrap:wrap; } .course-actions { width:100%; margin:.4rem 0 0; justify-content:flex-start; } .result-strip { align-items:start; flex-direction:column; } }
 @media(max-width:480px) { .form-row { grid-template-columns:1fr; } .list-actions { align-items:start; flex-direction:column; } .attendance-header { grid-template-columns:1fr; } .attendance-person { align-items:stretch; flex-direction:column; } .attendance-person select { width:100%; } .password-panel { flex-direction:column; } .topbar { font-size:.78rem; } }
@@ -93,3 +113,12 @@ h1,h2,h3,h4,p { margin-top:0; } h1,h2,h3,h4 { color:#17324d; letter-spacing:-.02
 :root[data-theme="dark"] .status-justificado { background:#493b22; color:#ffe4a4!important; }
 :root[data-theme="dark"] .theme-toggle { background:#102230; border-color:#557084; color:#a8bdca; }
 :root[data-theme="dark"] .theme-icon-active { background:#2e5862; color:#c4fbf4; box-shadow:0 1px 5px #050c1580; }
+:root[data-theme="dark"] .grades-scroll,:root[data-theme="dark"] .grades-table .sticky-column { border-color:#344b5d; }
+:root[data-theme="dark"] .grades-table .sticky-column { background:#172a3a; }
+:root[data-theme="dark"] .grades-table thead .sticky-column { background:#203748; }
+:root[data-theme="dark"] .grades-table tbody th small,:root[data-theme="dark"] .grade-edit-meta { color:#b0c2cf; }
+:root[data-theme="dark"] .grade-edit-dirty { background:#173c42; box-shadow:inset 3px 0 #70d8dc; }
+:root[data-theme="dark"] .grade-edit-controls input,:root[data-theme="dark"] .dialog .field textarea { background:#102230; border-color:#466174; color:#f0f6f8; }
+:root[data-theme="dark"] .grade-save-button { background:#1d444c; border-color:#62cbd0; color:#89e3e4; }
+:root[data-theme="dark"] .grade-save-button:hover:not(:disabled) { background:#285761; }
+:root[data-theme="dark"] .grade-cell-error { color:#ffd0d0; }:root[data-theme="dark"] .grade-cell-success { color:#baf0ce; }

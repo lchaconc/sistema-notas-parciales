@@ -1,42 +1,19 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Feedback, Field, ResourceView, SectionTitle } from '../../components/UI.jsx';
 import ConcentrateTable from '../../components/ConcentrateTable.jsx';
 import { useResource } from '../../hooks/useResource.js';
-import { decimal, decimalInput, fullName, validDecimal } from '../../utils/format.js';
+import { decimal, fullName } from '../../utils/format.js';
+import GradesTable from './GradesTable.jsx';
 
-export function GradesPanel({ api, course }) {
-  const people = useResource(() => api.get(`/profesor/cursos/${course.id}/matriculas`), [api, course.id]);
+export function GradesPanel({ api, course, onDirtyChange }) {
+  const report = useResource(() => api.get(`/profesor/cursos/${course.id}/concentrado`), [api, course.id]);
   const components = useResource(() => api.get(`/profesor/cursos/${course.id}/componentes`), [api, course.id]);
-  const [enrollmentId, setEnrollmentId] = useState(''); const [activityId, setActivityId] = useState('');
-  const [points, setPoints] = useState(''); const [observation, setObservation] = useState('');
-  const [loadingGrade, setLoadingGrade] = useState(false); const [busy, setBusy] = useState(false);
-  const [error, setError] = useState(''); const [message, setMessage] = useState('');
-  const activities = useMemo(() => (components.data || []).flatMap((component) => component.actividades.map((activity) => ({ ...activity, title: `${component.titulo} · Actividad ${activity.numero}` }))), [components.data]);
-  const selected = activities.find((activity) => String(activity.id) === activityId);
-  useEffect(() => {
-    if (!enrollmentId || !activityId) { setPoints(''); setObservation(''); return undefined; }
-    let active = true; setLoadingGrade(true); setError(''); setMessage('');
-    api.get(`/profesor/calificaciones/${enrollmentId}/${activityId}`).then((grade) => {
-      if (active) { setPoints(grade.puntos_obtenidos ?? ''); setObservation(grade.observacion ?? ''); }
-    }).catch((cause) => { if (active) setError(cause.message); }).finally(() => { if (active) setLoadingGrade(false); });
-    return () => { active = false; };
-  }, [api, enrollmentId, activityId]);
-  async function submit(event) {
-    event.preventDefault(); setError(''); setMessage('');
-    if (!selected || !validDecimal(points, 0, Number(selected.puntaje_asignado))) { setError(`La nota debe estar entre 0 y ${decimal(selected?.puntaje_asignado)} puntos, con hasta dos decimales.`); return; }
-    setBusy(true);
-    try { await api.put(`/profesor/calificaciones/${enrollmentId}/${activityId}`, { puntos_obtenidos: decimalInput(points), observacion: observation }); setMessage('Calificación guardada.'); }
-    catch (cause) { setError(cause.message); } finally { setBusy(false); }
-  }
-  return <><SectionTitle title="Calificaciones" description="Seleccione primero al estudiante y luego una actividad. La nota corresponde a puntos obtenidos en esa actividad." />
-    <section className="panel panel-narrow"><form className="form-stack" onSubmit={submit}>
-      <Field label="Estudiante matriculado"><select required value={enrollmentId} onChange={(e) => { setEnrollmentId(e.target.value); setActivityId(''); }}><option value="">Seleccione un estudiante</option>{(people.data || []).map((person) => <option key={person.id} value={person.id}>{fullName(person)} · {person.correo}</option>)}</select></Field>
-      <Field label="Actividad individual"><select required disabled={!enrollmentId} value={activityId} onChange={(e) => setActivityId(e.target.value)}><option value="">Seleccione una actividad</option>{activities.map((activity) => <option key={activity.id} value={activity.id}>{activity.title} · máximo {decimal(activity.puntaje_asignado)} pts</option>)}</select></Field>
-      {loadingGrade && <div role="status" className="state-panel">Cargando calificación anterior…</div>}
-      {activityId && !loadingGrade && <><Field label="Puntos obtenidos" hint={`Máximo de esta actividad: ${decimal(selected?.puntaje_asignado)} puntos`}><input required inputMode="decimal" value={points} onChange={(e) => setPoints(e.target.value)} placeholder="0,00" /></Field><Field label="Observación (opcional)"><textarea maxLength={125} rows={4} value={observation} onChange={(e) => setObservation(e.target.value)} /></Field><small>{observation.length}/125 caracteres</small></>}
-      <Feedback tone="error" message={error || people.error || components.error} /><Feedback tone="success" message={message} />
-      <button className="button-primary" disabled={!activityId || loadingGrade || busy}>{busy ? 'Guardando…' : 'Guardar calificación'}</button>
-    </form></section>
+  return <><SectionTitle title="Calificaciones" description="Escriba los puntos obtenidos en cada actividad y guarde cada celda con su disquete. El porcentaje mostrado procede de la API." />
+    <section className="panel grades-panel">
+      {(report.loading || components.loading) && !report.data && <div className="state-panel" role="status">Cargando calificaciones…</div>}
+      <Feedback tone="error" message={report.error || components.error} />
+      {report.data && components.data && <GradesTable api={api} report={report.data} components={components.data} onReload={report.reload} onDirtyChange={onDirtyChange} />}
+    </section>
   </>;
 }
 

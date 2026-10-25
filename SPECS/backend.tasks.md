@@ -62,6 +62,7 @@ Los pasos 1 a 12 corresponden al alcance ya desarrollado. El paso 13 describe la
 
 ### 8. Implementar calificaciones y resultados
 
+- Confirmar que la nueva tabla editable del frontend reutiliza el concentrado por curso, la consulta individual de observación y el `PUT` individual de calificación, que exige una nota válida y permite enviar la observación junto con ella. La reestructuración visual no requiere migración, servicio de guardado masivo ni cambio en el cálculo. Mantener pruebas de contrato para la asociación correcta entre matrícula y actividad, los límites de cada nota y la lectura del porcentaje actualizado tras guardar.
 - Registrar por matrícula y actividad individual los puntos obtenidos y la observación. Verificar que la actividad pertenezca al curso de la matrícula y que la nota esté entre cero y el puntaje asignado.
 - Permitir al profesor consultar la nota y observación previas de una actividad antes de editarlas; devolver valores nulos cuando aún no existe calificación y comprobar la pertenencia al mismo curso.
 - Calcular el aporte porcentual de cada actividad según la proporción de puntos, truncarlo a dos decimales antes de sumar y calcular el resultado del curso. Tratar la ausencia de nota como aporte cero sin confundirla con una nota explícita de `0,00`.

@@ -2,7 +2,7 @@
 
 El contrato de las 30 operaciones HTTP implementadas en `Backend/app/Config/Routes.php` está en [openapi.yaml](openapi.yaml). Usa OpenAPI 3.0.4 y se visualiza con Swagger UI en `http://localhost:8081` al ejecutar `docker compose up -d api_docs` desde la raíz del repositorio. `docker compose up --build -d` también lo levanta.
 
-La eliminación individual de componentes y el indicador `tiene_calificaciones` están documentados en [backend.api.md](../SPECS/backend.api.md) y disponibles en la API. Su control visual en el frontend sigue pendiente.
+La eliminación individual de componentes y el indicador `tiene_calificaciones` están documentados en [backend.api.md](../SPECS/backend.api.md) y disponibles en la API y la interfaz del profesor. La tabla editable para capturar calificaciones reutiliza las operaciones existentes; por ello no cambia `openapi.yaml` ni el número de rutas.
 
 Swagger UI expone la especificación en `http://localhost:8081/openapi.yaml` y envía las pruebas de `/api` al backend mediante un proxy del mismo origen. `GET /healt` y `POST /login` son públicos. Para probar operaciones protegidas, inicie sesión con `POST /login`, copie el campo `data.token` y péguelo en **Authorize** sin anteponer `Bearer`. El JWT dura una hora. La cuenta inicial del profesor se crea por consola según el [README principal](../README.md).
 

@@ -67,13 +67,18 @@ Los componentes creados antes de este cambio conservan el puntaje ya asignado a 
 
 ## Calificaciones y observaciones
 
-- El profesor selecciona a un estudiante y registra una calificación por cada actividad individual de los componentes del curso en que está matriculado.
-- Cada actividad individual asociada al estudiante dispone de una observación del profesor, con un máximo de 125 caracteres.
+- En la pestaña **Calificaciones** de un curso y grupo, el profesor trabaja en una tabla con apariencia de hoja de cálculo: estudiantes matriculados en filas y actividades individuales en columnas. Cada intersección representa la calificación de una sola matrícula y una sola actividad; contiene un campo numérico para los puntos obtenidos y un control de guardado identificable mediante un icono de disquete. Esta reorganización sustituye el flujo de seleccionar estudiante y luego actividad, sin cambiar el modelo de datos ni las reglas de cálculo.
+- El profesor registra una calificación por cada actividad individual de los componentes del curso en que está matriculado.
+- Cada actividad individual asociada al estudiante dispone de una observación del profesor, con un máximo de 125 caracteres. El editor de esa observación se abre desde la celda correspondiente y muestra el texto anterior para consultarlo o corregirlo.
 - Al volver a abrir una calificación, el profesor puede consultar y editar la observación que registró anteriormente en esa actividad individual.
 - El profesor ingresa los puntos obtenidos por el estudiante en cada actividad, como un número con dos decimales; por ejemplo, `8,50`.
 - La nota ingresada debe estar entre cero y el puntaje asignado a la actividad, inclusive. Se rechazan notas negativas o superiores a ese puntaje. Una actividad aún sin nota cuenta como cero para el cálculo del resultado del curso.
 - La aplicación calcula el aporte porcentual de cada actividad en proporción a los puntos obtenidos: `aporte = (puntos obtenidos / puntaje asignado a la actividad) × porcentaje de la actividad`. Por ejemplo, si la actividad vale 10 puntos y 2 %, obtener `10,00` puntos aporta `2,00 %` y obtener `8,50` puntos aporta `1,70 %`.
 - Cada aporte porcentual se trunca a dos decimales antes de sumarlo. El resultado del curso es la suma de esos aportes truncados y el resultado final también se trunca a dos decimales.
+- La tabla de edición mantiene el contexto visible del curso y grupo, la navegación por pestañas, la lectura en computadora y celular y los temas claro y oscuro existentes. El icono de disquete tiene un nombre accesible que identifica el estudiante y la actividad a los que corresponde.
+- Cada disquete guarda únicamente la celda a la que pertenece: nota y observación de ese estudiante en esa actividad. Los cambios pendientes de otras celdas no se envían con ese clic. Para guardar una observación primero debe existir una nota válida en esa celda; no se guarda una observación sola sin nota.
+- Después de guardar, la celda muestra debajo de la nota el **porcentaje obtenido** devuelto por el backend. La tabla de edición no calcula ese porcentaje por su cuenta.
+- Si existen cambios sin guardar y el profesor intenta cambiar de pestaña o de curso, la interfaz advierte antes de salir y le permite continuar editando o salir descartando esos cambios; no los guarda automáticamente.
 
 ## Concentrado de calificaciones
 

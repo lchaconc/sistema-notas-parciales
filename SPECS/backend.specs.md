@@ -102,10 +102,12 @@ La siguiente tabla define relaciones funcionales. No prescribe nombres de tablas
 
 ### Calificaciones y observaciones
 
+- La nueva tabla de captura del profesor cambia únicamente la interacción del cliente. Cada celda conserva la relación entre una matrícula y una actividad individual; no cambia la estructura de `calificaciones`, las validaciones, la autorización ni el cálculo de resultados. El backend mantiene la consulta del concentrado por curso para cargar las notas de la tabla y la lectura y escritura de una calificación individual para editarla. No se especifica una operación de guardado masivo.
 - Permitir al profesor registrar para cada estudiante matriculado una calificación por actividad individual, expresada en puntos obtenidos con dos decimales.
 - Rechazar una calificación negativa o superior al puntaje asignado a la actividad. Aceptar el cero y el puntaje completo.
 - Tratar como cero, para el cálculo del resultado del curso, una actividad cuya calificación todavía no se ha registrado.
 - Asociar a esa actividad y estudiante una observación del profesor de máximo 125 caracteres.
+- La observación se guarda junto con una nota válida de la misma matrícula y actividad. No se requiere aceptar una observación sin `puntos_obtenidos`; la nueva interfaz abre su editor desde la celda y envía ambos valores al guardar esa celda.
 - Permitir que el profesor consulte la nota y observación vigentes de una matrícula y actividad individual antes de volver a editarlas. Si todavía no hay calificación, devolver ambas como `null`; rechazar asociaciones de cursos o grupos distintos. Esta consulta requiere JWT de profesor y no añade observaciones al concentrado.
 - Calcular el aporte porcentual de cada actividad en proporción a la nota ingresada: `aporte = (puntos obtenidos / puntaje asignado a la actividad) × porcentaje asignado a la actividad`.
 - Ejemplo: en una actividad de 10 puntos y 2 %, una nota de `8,50` puntos aporta `1,70 %`; una nota de `10,00` puntos aporta `2,00 %`.
