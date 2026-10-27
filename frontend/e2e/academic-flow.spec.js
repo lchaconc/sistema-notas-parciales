@@ -111,10 +111,12 @@ test('profesor y estudiante completan sus recorridos con la API y base temporal'
   await expect(page.getByRole('button', { name: 'Eliminar', exact: true })).toHaveCount(0);
   const singleActivityCard = page.locator('.grade-card').filter({ hasText: 'Prueba de integración' });
   await expect(singleActivityCard.locator('.eyebrow')).toHaveText('prueba parcial');
+  await expect(singleActivityCard.locator('.observation')).toContainText('Buen trabajo');
   const repeatedActivityCards = page.locator('.grade-card').filter({ hasText: 'Cinco actividades de diez puntos' });
   await expect(repeatedActivityCards).toHaveCount(5);
   await expect(repeatedActivityCards.nth(0).locator('.eyebrow')).toHaveText('prueba parcial 1');
   await expect(repeatedActivityCards.nth(1).locator('.eyebrow')).toHaveText('prueba parcial 2');
+  await expect(repeatedActivityCards.nth(0).locator('.observation')).toHaveCount(0);
   await expect(page.getByText('1,70 % obtenido')).toBeVisible();
   await expect(page.getByText('Buen trabajo')).toBeVisible();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');

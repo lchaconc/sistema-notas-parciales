@@ -5,7 +5,7 @@ import StudentPage from './StudentPage.jsx';
 
 afterEach(cleanup);
 
-test('las tarjetas muestran el nombre del catálogo solo o con el número de su componente', async () => {
+test('las tarjetas rotulan la actividad y muestran observaciones solo cuando hay texto', async () => {
   const course = {
     id: 7, nombre: 'Informática Aplicada', codigo: 'PD008', numero_grupo: 1,
     cuatrimestre_codigo: '3-2026', fecha_inicio: '2026-09-01', fecha_cierre: '2026-12-15',
@@ -19,7 +19,10 @@ test('las tarjetas muestran el nombre del catálogo solo o con el número de su 
   const api = {
     get: vi.fn((path) => Promise.resolve(path === '/estudiante/cursos'
       ? [course]
-      : { resultado: '0.00', tarjetas: cards.map((card) => ({ ...card, nota: null, porcentaje_obtenido: '0.00', observacion: null })) })),
+      : { resultado: '0.00', tarjetas: cards.map((card, index) => ({
+        ...card, nota: null, porcentaje_obtenido: '0.00',
+        observacion: ['Buen trabajo', null, '', '   '][index],
+      })) })),
   };
 
   render(<StudentPage api={api} onLogout={() => {}} theme="dark" onToggleTheme={() => {}} />);
@@ -31,6 +34,12 @@ test('las tarjetas muestran el nombre del catálogo solo o con el número de su 
   expect(within(renderedCards[1]).getByText('tarea 1')).toBeTruthy();
   expect(within(renderedCards[2]).getByText('tarea 2')).toBeTruthy();
   expect(within(renderedCards[3]).getByText('proyecto 1')).toBeTruthy();
+  expect(within(renderedCards[0]).getByText('Observación')).toBeTruthy();
+  expect(within(renderedCards[0]).getByText('Buen trabajo')).toBeTruthy();
+  for (const card of renderedCards.slice(1)) {
+    expect(card.querySelector('.observation')).toBeNull();
+  }
+  expect(screen.queryByText('Sin observación registrada.')).toBeNull();
   expect(screen.queryByText('Actividad 1')).toBeNull();
   expect(api.get).toHaveBeenCalledWith('/estudiante/cursos/7/calificaciones');
 });
