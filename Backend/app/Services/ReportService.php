@@ -95,12 +95,20 @@ class ReportService
             ->select('actividad_individual_id, observacion')
             ->where('matricula_id', $person['matricula_id'])->get()->getResultArray();
         $observationMap = array_column($observations, 'observacion', 'actividad_individual_id');
+        $activityLabels = $db->table('actividades_individuales ai')
+            ->select('ai.id, ca.nombre AS actividad_catalogo, c.cantidad_actividades')
+            ->join('componentes_evaluacion c', 'c.id = ai.componente_id')
+            ->join('catalogo_actividades ca', 'ca.id = c.actividad_catalogo_id')
+            ->where('c.curso_id', $courseId)->get()->getResultArray();
+        $labelMap = array_column($activityLabels, null, 'id');
         $cards = [];
         $totalCents = 0;
         foreach ($person['calificaciones'] as $index => $cell) {
             $totalCents += Input::cents(['value' => $cell['porcentaje_obtenido']], 'value');
             $cards[] = [
                 ...$concentrate['actividades'][$index],
+                'actividad_catalogo' => $labelMap[$cell['actividad_id']]['actividad_catalogo'],
+                'cantidad_actividades' => (int) $labelMap[$cell['actividad_id']]['cantidad_actividades'],
                 'nota' => $cell['nota'],
                 'porcentaje_obtenido' => $cell['porcentaje_obtenido'],
                 'observacion' => $observationMap[$cell['actividad_id']] ?? null,

@@ -867,8 +867,16 @@ components:
       allOf:
         - $ref: '#/components/schemas/ConcentrateActivity'
         - type: object
-          required: [nota, porcentaje_obtenido, observacion]
+          required: [actividad_catalogo, cantidad_actividades, nota, porcentaje_obtenido, observacion]
           properties:
+            actividad_catalogo:
+              type: string
+              description: Nombre de la actividad del catálogo asociada al componente, con su grafía almacenada.
+            cantidad_actividades:
+              type: integer
+              minimum: 1
+              maximum: 15
+              description: Cantidad de actividades individuales del componente al que pertenece esta tarjeta.
             nota: { $ref: '#/components/schemas/NullableDecimalOutput' }
             porcentaje_obtenido: { $ref: '#/components/schemas/DecimalOutput' }
             observacion: { type: string, nullable: true, maxLength: 125 }

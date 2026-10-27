@@ -83,9 +83,10 @@ Los pasos 1 a 12 corresponden al alcance ya desarrollado. El paso 13 describe la
 ### 11. Implementar consultas y concentrados
 
 - Proporcionar al estudiante autenticado sus cursos, tarjetas con nota, aporte porcentual y observación, y asistencia agrupada por curso. Impedir que consulte datos de otra cuenta.
+- Incluir en cada tarjeta de `GET /api/estudiante/cursos/{cursoId}/calificaciones` el nombre `actividad_catalogo` de la opción asociada al componente y `cantidad_actividades` de ese componente, además de `titulo` y `numero` ya existentes. Mantener `numero` dentro del componente para que el cliente muestre solo el nombre del catálogo cuando la cantidad sea 1, o el nombre seguido del número cuando sea mayor. Conservar la estructura de los concentrados y de la descarga `.xlsx`; no se requiere una migración de base de datos para estos campos derivados de relaciones existentes. **Estado:** implementado y documentado en [backend.api.md](backend.api.md) y OpenAPI.
 - Generar en tiempo de ejecución el concentrado del profesor por curso y grupo y el del estudiante por curso. Incluir nota y porcentaje obtenido por actividad, incluso cuando todavía no haya nota, conforme al contrato que se defina en el paso 1.
 - Generar para el profesor un `.xlsx` con los mismos datos de su tabla. Limitar la descarga al rol profesor y evitar guardar una copia permanente del concentrado.
-- **Pruebas de API e integración:** aislamiento entre estudiantes y grupos, coherencia entre tarjetas, resultados y concentrados, actualización visible tras cambiar una nota, equivalencia entre tabla del profesor y archivo `.xlsx`, y rechazo de descarga solicitada por un estudiante.
+- **Pruebas de API e integración:** aislamiento entre estudiantes y grupos, coherencia entre tarjetas, resultados y concentrados, actualización visible tras cambiar una nota, equivalencia entre tabla del profesor y archivo `.xlsx`, y rechazo de descarga solicitada por un estudiante. Verificar en la respuesta real los nombres y cantidades de un componente con una actividad y otro con varias, la numeración propia de cada componente y la ausencia de estos campos nuevos en el concentrado.
 
 ### 12. Ejecutar la validación integral y documentar la entrega
 

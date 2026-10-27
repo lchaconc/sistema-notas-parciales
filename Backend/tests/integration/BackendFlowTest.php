@@ -185,6 +185,52 @@ final class BackendFlowTest extends CIUnitTestCase
         $this->assertNotNull($this->testDb->table('catalogo_actividades')->where('id', $catalogId)->get()->getRow());
     }
 
+    public function testStudentCardsIncludeCatalogNameAndComponentActivityCount(): void
+    {
+        $quarter = (new CourseService())->createQuarter([
+            'codigo' => '1-2026', 'fecha_inicio' => '2026-01-01', 'fecha_cierre' => '2026-04-30',
+        ]);
+        $course = (new CourseService())->createCourse([
+            'cuatrimestre_id' => (int) $quarter['id'], 'nombre' => 'Curso', 'codigo' => 'C1', 'numero_grupo' => 1,
+        ]);
+        $this->testDb->table('catalogo_actividades')->insert(['nombre' => 'proyecto']);
+        $projectId = (int) $this->testDb->insertID();
+        $this->testDb->table('catalogo_actividades')->insert(['nombre' => 'tarea']);
+        $taskId = (int) $this->testDb->insertID();
+        $evaluation = new EvaluationService();
+        foreach ([[$projectId, 'Proyecto en Word', 1], [$taskId, 'Tareas', 2]] as [$catalogId, $title, $count]) {
+            $evaluation->createComponent((int) $course['id'], [
+                'actividad_catalogo_id' => $catalogId, 'titulo' => $title,
+                'cantidad_actividades' => $count, 'porcentaje_total' => '10.00',
+                'puntaje_por_actividad' => '10.00',
+            ]);
+        }
+        $student = (new EnrollmentService())->enroll((int) $course['id'], [
+            'nombre' => 'Ana', 'primer_apellido' => 'Uno', 'segundo_apellido' => 'Dos',
+            'correo' => 'ana@ucatolica.ac.cr',
+        ]);
+        $password = (new AuthService())->generateStudentPassword($student['estudiante_id'])['contrasena'];
+        $token = json_decode($this->jsonRequest('POST', 'api/login', [
+            'correo' => 'ana@ucatolica.ac.cr', 'contrasena' => $password,
+        ])->getJSON(), true)['data']['token'];
+
+        $response = $this->jsonRequest('GET', 'api/estudiante/cursos/' . $course['id'] . '/calificaciones', null, $token);
+        $response->assertStatus(200);
+        $cards = json_decode($response->getJSON(), true)['data']['tarjetas'];
+        $this->assertCount(3, $cards);
+        $this->assertSame(['proyecto', 1, 1, 'Proyecto en Word'], [
+            $cards[0]['actividad_catalogo'], $cards[0]['cantidad_actividades'], $cards[0]['numero'], $cards[0]['titulo'],
+        ]);
+        $this->assertSame(['tarea', 2, 1, 'Tareas'], [
+            $cards[1]['actividad_catalogo'], $cards[1]['cantidad_actividades'], $cards[1]['numero'], $cards[1]['titulo'],
+        ]);
+        $this->assertSame(['tarea', 2, 2, 'Tareas'], [
+            $cards[2]['actividad_catalogo'], $cards[2]['cantidad_actividades'], $cards[2]['numero'], $cards[2]['titulo'],
+        ]);
+        $concentrate = (new ReportService())->concentrate((int) $course['id'], $student['estudiante_id']);
+        $this->assertArrayNotHasKey('actividad_catalogo', $concentrate['actividades'][0]);
+    }
+
     public function testCatalogAndComponentLimits(): void
     {
         $this->expectException(ApiError::class);

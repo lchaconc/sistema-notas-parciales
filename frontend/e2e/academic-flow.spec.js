@@ -38,7 +38,7 @@ test('profesor y estudiante completan sus recorridos con la API y base temporal'
   await page.locator('.course-item').filter({ hasText: courseCode }).getByRole('button', { name: 'Abrir', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Componentes de evaluación' })).toBeVisible();
 
-  await page.getByLabel('Actividad del catálogo').selectOption({ index: 1 });
+  await page.getByLabel('Actividad del catálogo').selectOption({ label: 'prueba parcial' });
   await page.getByLabel('Título').fill('Prueba de integración');
   await page.getByLabel('Cantidad de actividades').fill('1');
   await page.getByLabel('Porcentaje total').fill('2,00');
@@ -46,7 +46,7 @@ test('profesor y estudiante completan sus recorridos con la API y base temporal'
   await page.getByRole('button', { name: 'Crear componente' }).click();
   await expect(page.getByText('Componente creado.')).toBeVisible();
 
-  await page.getByLabel('Actividad del catálogo').selectOption({ index: 1 });
+  await page.getByLabel('Actividad del catálogo').selectOption({ label: 'prueba parcial' });
   await page.getByLabel('Título').fill('Cinco actividades de diez puntos');
   await page.getByLabel('Cantidad de actividades').fill('5');
   await page.getByLabel('Porcentaje total').fill('10,00');
@@ -109,6 +109,12 @@ test('profesor y estudiante completan sus recorridos con la API y base temporal'
   await expect(page.getByRole('heading', { name: 'Mis cursos' })).toBeVisible();
   await page.getByRole('button', { name: /Curso de integración/ }).click();
   await expect(page.getByRole('button', { name: 'Eliminar', exact: true })).toHaveCount(0);
+  const singleActivityCard = page.locator('.grade-card').filter({ hasText: 'Prueba de integración' });
+  await expect(singleActivityCard.locator('.eyebrow')).toHaveText('prueba parcial');
+  const repeatedActivityCards = page.locator('.grade-card').filter({ hasText: 'Cinco actividades de diez puntos' });
+  await expect(repeatedActivityCards).toHaveCount(5);
+  await expect(repeatedActivityCards.nth(0).locator('.eyebrow')).toHaveText('prueba parcial 1');
+  await expect(repeatedActivityCards.nth(1).locator('.eyebrow')).toHaveText('prueba parcial 2');
   await expect(page.getByText('1,70 % obtenido')).toBeVisible();
   await expect(page.getByText('Buen trabajo')).toBeVisible();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');

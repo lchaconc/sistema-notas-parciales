@@ -2,7 +2,7 @@
 
 La versión ejecutable de este contrato en OpenAPI 3.0.4 está en [API-DOCS/openapi.yaml](../API-DOCS/openapi.yaml) y se visualiza con Swagger UI en Docker.
 
-**Estado del contrato:** la eliminación individual de componentes y `tiene_calificaciones` están implementados y documentados en OpenAPI. La tabla editable de calificaciones del profesor reutiliza las rutas de calificaciones y concentrado ya descritas aquí.
+**Estado del contrato:** la eliminación individual de componentes y `tiene_calificaciones` están implementados y documentados en OpenAPI. La tabla editable de calificaciones del profesor reutiliza las rutas de calificaciones y concentrado ya descritas aquí. Las tarjetas de calificaciones del estudiante incluyen `actividad_catalogo` y `cantidad_actividades`, también documentados en OpenAPI.
 
 Todas las rutas comienzan con `/api`. Salvo `POST /api/login` y `GET /api/healt`, requieren `Authorization: Bearer <JWT>`. Las solicitudes con cuerpo usan `Content-Type: application/json` y un objeto JSON. Las respuestas normales son `{ "data": ... }`; los rechazos controlados son `{ "error": "motivo" }`. Se usan `400` para datos inválidos, `401` para autenticación ausente o inválida, `403` para rol incorrecto, `404` para recurso o matrícula inexistente, `409` para conflictos, `500` para fallos internos y `503` cuando la comprobación de MySQL falla. Las creaciones devuelven `201`; las demás operaciones correctas, `200`. La descarga `.xlsx` devuelve contenido binario.
 
@@ -49,13 +49,15 @@ El identificador de estudiante procede exclusivamente del JWT. Cada `{cursoId}` 
 | Método y ruta | Salida principal |
 | --- | --- |
 | `GET /estudiante/cursos` | Cursos propios. |
-| `GET /estudiante/cursos/{cursoId}/calificaciones` | Tarjetas con nota, porcentaje obtenido, observación y resultado del curso. |
+| `GET /estudiante/cursos/{cursoId}/calificaciones` | Tarjetas con título del componente, `numero`, `actividad_catalogo`, `cantidad_actividades`, nota, porcentaje obtenido y observación; incluye el resultado del curso. |
 | `GET /estudiante/cursos/{cursoId}/asistencia` | Fecha y condición de cada sesión. |
 | `GET /estudiante/cursos/{cursoId}/concentrado` | Tabla propia por actividad, con nota y porcentaje obtenido. |
 
 El concentrado devuelve `curso`, `actividades` y `estudiantes`. Cada celda contiene `nota` (o `null` si no se ha registrado) y `porcentaje_obtenido` como decimal de dos cifras. El resultado del curso suma los aportes truncados por actividad; la tabla no incluye observaciones ni el resultado total.
 
-La propuesta de tabla editable en **Calificaciones** usa `matricula_id` de cada estudiante, `id` de cada actividad y `nota` del concentrado para presentar sus celdas. El puntaje máximo procede de la consulta de componentes del curso. Al abrir el editor de observación de una celda se conserva `GET /profesor/calificaciones/{matriculaId}/{actividadId}`; su disquete utiliza `PUT` de esa misma ruta con nota y observación válidas de **esa celda**. No se guarda una observación sin nota. Para mostrar el porcentaje obtenido actualizado tras guardar, el cliente vuelve a consultar el concentrado. Este rediseño no añade operaciones HTTP, no cambia las respuestas existentes ni convierte la descarga `.xlsx` en un archivo editable de importación.
+Cada elemento de `tarjetas` en la consulta de calificaciones del estudiante incluye `id`, `titulo`, `numero`, `actividad_catalogo`, `cantidad_actividades`, `nota`, `porcentaje_obtenido` y `observacion`. `actividad_catalogo` es el nombre almacenado en el catálogo; `cantidad_actividades` y `numero` corresponden al componente y a la actividad individual de esa tarjeta. El frontend usa solo el nombre del catálogo si la cantidad es 1, o el nombre seguido de un espacio y el número si es mayor. El título del componente se muestra aparte. La consulta de concentrado conserva su esquema previo.
+
+La propuesta de tabla editable en **Calificaciones** usa `matricula_id` de cada estudiante, `id` de cada actividad y `nota` del concentrado para presentar sus celdas. El puntaje máximo procede de la consulta de componentes del curso. Al abrir el editor de observación de una celda se conserva `GET /profesor/calificaciones/{matriculaId}/{actividadId}`; su disquete utiliza `PUT` de esa misma ruta con nota y observación válidas de **esa celda**. No se guarda una observación sin nota. Para mostrar el porcentaje obtenido actualizado tras guardar, el cliente vuelve a consultar el concentrado. Por sí mismo, ese rediseño de la tabla no añade operaciones HTTP, no cambia las respuestas existentes ni convierte la descarga `.xlsx` en un archivo editable de importación.
 
 ## Eliminar un componente
 

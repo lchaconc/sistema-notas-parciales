@@ -132,7 +132,7 @@ La siguiente tabla define relaciones funcionales. No prescribe nombres de tablas
 ### Estudiante
 
 - Proporcionar únicamente los cursos del estudiante autenticado, con sus calificaciones y asistencia agrupadas por curso.
-- Para las tarjetas de cada actividad individual, proporcionar la nota, el porcentaje obtenido y las observaciones del profesor.
+- Para las tarjetas de cada actividad individual, proporcionar el título del componente, `numero`, el nombre `actividad_catalogo`, `cantidad_actividades` del componente, la nota, el porcentaje obtenido y las observaciones del profesor. Estos datos permiten al cliente rotular una actividad única solo con el nombre del catálogo y varias con ese nombre y el número propio de cada actividad.
 - Para la tabla de concentrado del estudiante, proporcionar por curso la nota y el porcentaje obtenido de cada actividad individual. El estudiante no puede descargar el concentrado en `.xlsx`.
 
 ## Validaciones y consistencia

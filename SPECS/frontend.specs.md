@@ -10,6 +10,8 @@ La tabla editable de **Calificaciones** descrita aquí se implementa en el clien
 
 La eliminación individual de componentes está disponible en la API y en la interfaz del profesor. Su comportamiento se verifica con pruebas de componentes y de extremo a extremo.
 
+El rótulo de las tarjetas de calificaciones del estudiante está implementado en el cliente y usa los campos añadidos a la respuesta de la API y a OpenAPI.
+
 ## Plataforma y responsabilidades
 
 - El cliente reside en `frontend/` dentro del monorepositorio y se ejecuta en Docker junto con el backend y MySQL. Usa JavaScript, Vite, React, Tailwind CSS y Motion; no usa TypeScript. Consume la API con `fetch` nativo.
@@ -101,7 +103,9 @@ La confirmación de eliminación informa que desaparecerán los datos propios de
 ## Área del estudiante
 
 - `GET /api/estudiante/cursos` devuelve solo los cursos del estudiante autenticado. Si cursa varios, el cliente agrupa las consultas y vistas por curso, identificado por su cuatrimestre, código y número de grupo.
-- En cada curso, `GET /api/estudiante/cursos/{cursoId}/calificaciones` entrega `resultado` y `tarjetas`. Una tarjeta corresponde a una actividad individual y presenta su título, número, nota obtenida, porcentaje obtenido y observación. Muestra el **porcentaje que obtuvo** el estudiante: en el ejemplo confirmado, `1,70 %`, no el peso completo `2,00 %` de la actividad. La nota nula se identifica como pendiente de calificar.
+- En cada curso, `GET /api/estudiante/cursos/{cursoId}/calificaciones` entrega `resultado` y `tarjetas`. Una tarjeta corresponde a una actividad individual y presenta el título del componente, su rótulo de actividad, nota obtenida, porcentaje obtenido y observación. Muestra el **porcentaje que obtuvo** el estudiante: en el ejemplo confirmado, `1,70 %`, no el peso completo `2,00 %` de la actividad. La nota nula se identifica como pendiente de calificar.
+- El rótulo de la parte superior de cada tarjeta se forma con el nombre de la actividad del catálogo asociada al componente. Con `cantidad_actividades = 1`, muestra **solo** ese nombre: «proyecto», sin el número ni «Actividad 1». Con `cantidad_actividades > 1`, muestra ese nombre, un espacio y `numero`, numerado dentro del componente: «tarea 1», «tarea 2», etc., aunque el título del componente sea «Tareas». El título del componente sigue visible por separado debajo del rótulo. El cliente no obtiene el nombre desde el título, no singulariza palabras y no usa el orden de las tarjetas como número. El texto conserva la grafía recibida del catálogo; la cabecera mantiene el estilo visual actual que lo muestra en mayúsculas.
+- Cada elemento de `tarjetas` entrega `id`, `titulo`, `numero`, `actividad_catalogo`, `cantidad_actividades`, `nota`, `porcentaje_obtenido` y `observacion`. `actividad_catalogo` es el nombre de la opción del catálogo asociada al componente y `cantidad_actividades` es la cantidad de actividades de ese componente. El cliente usa esos campos y el `numero` de la misma tarjeta. La respuesta, [backend.api.md](backend.api.md) y `API-DOCS/openapi.yaml` están alineados; el concentrado no cambia de estructura.
 - `GET /api/estudiante/cursos/{cursoId}/asistencia` muestra fecha y condición (`presente`, `ausente` o `justificado`) de cada sesión de ese curso.
 - `GET /api/estudiante/cursos/{cursoId}/concentrado` presenta una tabla por curso con las propias notas y porcentajes obtenidos por actividad individual. Usa únicamente el registro del estudiante entregado por la API. No incluye observaciones, puntaje máximo ni total del curso en esa tabla y no ofrece descarga `.xlsx`.
 - En **Perfil > Cambiar contraseña**, el estudiante introduce la nueva contraseña y el frontend envía `PUT /api/estudiante/perfil/contrasena` con `contrasena_nueva`. La API guarda el hash; el cliente no recibe ni muestra el hash.
