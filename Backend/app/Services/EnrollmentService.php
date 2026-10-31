@@ -42,6 +42,7 @@ class EnrollmentService
         $db = db_connect();
         $db->transBegin();
         try {
+            $db->query('SELECT id FROM cursos WHERE id = ? FOR UPDATE', [$courseId]);
             $users = new UserModel();
             $user = $users->where('correo', $email)->first();
             if ($user && $user['rol'] !== 'estudiante') {
@@ -63,7 +64,8 @@ class EnrollmentService
                 throw new ApiError('El estudiante ya está matriculado en este curso.', 409);
             }
             $enrollmentId = (int) $enrollments->insert(['estudiante_id' => $studentId, 'curso_id' => $courseId], true);
-            $sessions = $db->table('sesiones_asistencia')->select('id')->where('curso_id', $courseId)->get()->getResultArray();
+            $sessions = $db->table('sesiones_asistencia')->select('id')->where('curso_id', $courseId)
+                ->where('asistencia_registrada', 1)->get()->getResultArray();
             foreach ($sessions as $session) {
                 $db->table('asistencias')->insert([
                     'sesion_id' => $session['id'],

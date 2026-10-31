@@ -57,7 +57,7 @@ Los pasos 1 a 12 corresponden al alcance ya desarrollado. El paso 13 describe la
 ### 7. Implementar estudiantes y matrículas
 
 - Crear un estudiante al matricularlo o reutilizar su cuenta cuando ya exista el mismo correo; rechazar el correo del profesor y los dominios no permitidos. Conservar una sola identidad para todos sus cursos.
-- Impedir una segunda matrícula del mismo estudiante en el mismo curso. Al matricularlo en un curso con sesiones existentes, crear una asistencia `justificado` para cada sesión anterior dentro de la misma operación.
+- Impedir una segunda matrícula del mismo estudiante en el mismo curso. Al matricularlo en un curso con asistencia registrada, crear `justificado` solo para esas sesiones registradas dentro de la misma operación; las sesiones pendientes siguen sin condición.
 - **Pruebas de integración y API:** reutilización en varios cursos, unicidad sensible a mayúsculas, rechazo de matrícula duplicada, ausencia de registros parciales si falla la operación y alta tardía en una o varias sesiones.
 
 ### 8. Implementar calificaciones y resultados
@@ -70,9 +70,9 @@ Los pasos 1 a 12 corresponden al alcance ya desarrollado. El paso 13 describe la
 
 ### 9. Implementar las quince sesiones y la asistencia
 
-- Crear y consultar sesiones por curso y fecha, dentro del intervalo inclusivo del cuatrimestre, como máximo quince y sin repetir día en el mismo curso.
-- Exigir una condición válida por cada estudiante matriculado al crear la sesión. Permitir editar condiciones de sesiones anteriores, incluidas las creadas como `justificado` por matrícula tardía.
-- **Pruebas de integración y API:** fechas límite y fuera de rango, día duplicado, sesión dieciséis, condición faltante o inválida, pertenencia de matrícula y sesión al mismo curso y edición posterior de asistencia histórica.
+- El alta manual de sesiones de este paso pertenece al alcance anterior y queda sustituida por la automatización del paso 14. La consulta sigue siendo necesaria.
+- Registrar por primera vez y corregir condiciones en sesiones ya programadas, con una condición válida por cada estudiante matriculado, incluidas las inicialmente `justificado` por matrícula tardía.
+- **Pruebas de integración y API del objetivo:** quince fechas semanales, ausencia de alta manual, condición faltante o inválida, pertenencia al mismo curso, primera captura y corrección posterior.
 
 ### 10. Implementar eliminación segura del curso
 
@@ -101,6 +101,14 @@ Los pasos 1 a 12 corresponden al alcance ya desarrollado. El paso 13 describe la
 - Comprobar las calificaciones nuevamente dentro de la operación transaccional de `DELETE`, coordinando esa comprobación con escrituras concurrentes de notas para el mismo componente. Sin `confirmar_con_notas=true`, responder `409` y no modificar datos si hay notas. Con confirmación informada, eliminar atómicamente el componente, actividades individuales, calificaciones y observaciones. Permitirlo antes o después del cierre del cuatrimestre y conservar curso, estudiantes, matrículas, asistencias, catálogo y otros componentes.
 - Tras el borrado, devolver la respuesta especificada y comprobar que consultas de componentes, `en_uso`, resultados y concentrados se obtienen de los datos restantes. La ruta y su campo figuran en OpenAPI y deben mantenerse alineados con `Routes.php`.
 - **Pruebas:** JWT ausente y rol estudiante; curso o componente ajeno e inexistente; borrado sin notas; nota `0,00`; borrado con notas rechazado sin confirmación; borrado confirmado con todas sus dependencias; preservación de otros cursos y componentes; recalculado de resultado y concentrado; liberación del porcentaje y cambio de `en_uso` solo al desaparecer la última asociación; fallo transaccional sin borrado parcial; repetición de la solicitud después del éxito.
+
+### 14. Automatizar el calendario de cuatrimestres y la asistencia (implementado)
+
+- Migrar el esquema según [database.specs.md](database.specs.md): crear `sesiones_cuatrimestre`, vincular `sesiones_asistencia` sin duplicar fecha y distinguir asistencia pendiente de registrada. Respaldar y validar antes de modificar datos; preservar identificadores y condiciones de `3-2026`, completar sus sesiones faltantes y comprobar equivalencia después.
+- Rechazar fechas de cuatrimestre cuya diferencia no sea exactamente 98 días. Crear cuatrimestre y sus quince fechas semanales en una transacción. Crear curso y sus quince sesiones pendientes en otra transacción, sin inventar asistencias.
+- Cambiar la primera captura y la edición para operar sobre una sesión existente mediante `PUT`, con todas y solo las matrículas vigentes. La consulta del profesor entrega las quince sesiones con número, fecha, estado y condiciones; la del estudiante devuelve únicamente condiciones registradas. La matrícula tardía inserta `justificado` solo en sesiones registradas.
+- Retirar `POST /api/profesor/cursos/{cursoId}/sesiones` de `Routes.php`, servicio, pruebas y contrato; actualizar `GET` y `PUT` en [backend.api.md](backend.api.md) y OpenAPI en el mismo cambio de implementación. Coordinar el frontend para elegir sesión programada y eliminar fecha y alta manual antes de dar por terminado el alcance.
+- **Pruebas:** diferencias de 97, 98 y 99 días; quince filas por cuatrimestre y curso; rollback; matrícula tardía con sesiones pendientes y registradas; primera captura completa y corrección; visibilidad del estudiante; migración reproducible de `3-2026` conservando diez asistencias; concordancia entre API, OpenAPI, rutas e interfaz.
 
 ## Pruebas del frontend relacionadas con este plan
 

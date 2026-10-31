@@ -15,6 +15,7 @@ El aplicativo permitirá registrar y consultar calificaciones y asistencia de es
 ## Gestión de cursos
 
 - Para crear un curso se registran su nombre, código, número de grupo y cuatrimestre. El cuatrimestre tiene una fecha de inicio y una fecha de cierre, comunes a todos los cursos que se imparten en él.
+- **Automatización de sesiones implementada:** un cuatrimestre nuevo solo se acepta cuando `fecha_cierre` está exactamente 98 días después de `fecha_inicio`. Al crearlo se guardan atómicamente quince fechas semanales en `sesiones_cuatrimestre`, numeradas del 1 al 15: la primera coincide con el inicio y la última con el cierre. Todas caen en el mismo día de la semana. Al crear cada curso del cuatrimestre se crean sus quince sesiones de asistencia vinculadas a esas fechas, inicialmente sin condiciones de estudiantes. El profesor registra las condiciones sobre cada sesión existente; no crea sesiones ni elige fechas manualmente.
 - El cuatrimestre utiliza el formato `N-AAAA`, donde `N` toma un valor de 1 a 3. Ejemplo: `3-2026`.
 - Un mismo código de curso puede utilizarse en cuatrimestres distintos y también en varios cursos del mismo cuatrimestre cuando corresponden a grupos separados. Cada grupo se distingue por un número, por ejemplo, grupo `1` y grupo `2`; dos grupos con el mismo código y cuatrimestre deben tener números distintos.
 - La fecha de cierre del cuatrimestre determina cuándo termina para todos sus cursos. Cada curso puede eliminarse después de esa fecha.
@@ -89,12 +90,10 @@ Los componentes creados antes de este cambio conservan el puntaje ya asignado a 
 
 ## Asistencia
 
-- Cada curso tiene quince sesiones y se consigna la asistencia en cada una.
-- Para crear un registro de asistencia se selecciona el curso y se ingresa la fecha de la sesión. Se muestra la lista de estudiantes matriculados y se asigna obligatoriamente a cada uno una condición: **presente**, **ausente** o **justificado**.
-- La fecha de la sesión debe estar entre las fechas de inicio y cierre del cuatrimestre del curso, inclusive. Se rechazan fechas fuera de ese intervalo.
-- Solo puede existir un registro de asistencia por curso y fecha; no se crean varios registros para un mismo curso en un mismo día.
-- Es posible cargar registros de asistencia guardados y modificarlos.
-- Si un estudiante se matricula después de que ya se registraron sesiones en su curso, se agrega a esas sesiones anteriores con la condición inicial **justificado**. El profesor puede editar después la condición de ese estudiante en cualquiera de esas sesiones.
+- Cada curso tiene exactamente quince sesiones ya programadas, una por cada fecha semanal de su cuatrimestre. Una sesión programada puede tener su asistencia **pendiente**; su existencia no equivale a haber registrado condiciones.
+- Para registrar la asistencia se selecciona una sesión existente del curso y se asigna obligatoriamente a cada estudiante matriculado una condición: **presente**, **ausente** o **justificado**. La primera captura y las correcciones posteriores se guardan en esa misma sesión. No se permite crear una sesión adicional ni cambiar su fecha.
+- Al matricular a un estudiante después de que la asistencia de alguna sesión del curso ya fue registrada, se le asigna **justificado** solo en esas sesiones registradas. Las sesiones programadas cuya asistencia sigue pendiente no reciben una condición por anticipado. El profesor puede corregir después cualquiera de las condiciones guardadas.
+- El estudiante consulta solo sesiones con una condición de asistencia registrada para su matrícula; no ve fechas programadas todavía pendientes.
 
 ## Acceso y consulta del estudiante
 

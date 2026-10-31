@@ -23,7 +23,7 @@ final class BackendFlowTest extends CIUnitTestCase
     {
         parent::setUp();
         $this->testDb = db_connect('tests');
-        foreach (['asistencias', 'sesiones_asistencia', 'calificaciones', 'matriculas', 'actividades_individuales', 'componentes_evaluacion', 'cursos', 'cuatrimestres', 'estudiantes', 'usuarios', 'catalogo_actividades', 'dominios_permitidos'] as $table) {
+        foreach (['asistencias', 'sesiones_asistencia', 'calificaciones', 'matriculas', 'actividades_individuales', 'componentes_evaluacion', 'cursos', 'sesiones_cuatrimestre', 'cuatrimestres', 'estudiantes', 'usuarios', 'catalogo_actividades', 'dominios_permitidos'] as $table) {
             $this->testDb->table($table)->emptyTable();
         }
         $this->testDb->table('dominios_permitidos')->ignore(true)->insert(['dominio' => 'ucatolica.ac.cr']);
@@ -70,7 +70,7 @@ final class BackendFlowTest extends CIUnitTestCase
         ])->assertStatus(401);
 
         $quarter = (new CourseService())->createQuarter([
-            'codigo' => '1-2025', 'fecha_inicio' => '2025-01-01', 'fecha_cierre' => '2025-04-30',
+            'codigo' => '1-2025', 'fecha_inicio' => '2025-01-01', 'fecha_cierre' => '2025-04-09',
         ]);
         $course = (new CourseService())->createCourse([
             'cuatrimestre_id' => (int) $quarter['id'], 'nombre' => 'Curso', 'codigo' => 'C1', 'numero_grupo' => 1,
@@ -121,7 +121,7 @@ final class BackendFlowTest extends CIUnitTestCase
     {
         $courses = new CourseService();
         $quarter = $courses->createQuarter([
-            'codigo' => '2-2025', 'fecha_inicio' => '2025-05-01', 'fecha_cierre' => '2025-08-31',
+            'codigo' => '2-2025', 'fecha_inicio' => '2025-05-01', 'fecha_cierre' => '2025-08-07',
         ]);
         $course = $courses->createCourse([
             'cuatrimestre_id' => (int) $quarter['id'], 'nombre' => 'Programación', 'codigo' => 'PR1', 'numero_grupo' => 1,
@@ -141,8 +141,9 @@ final class BackendFlowTest extends CIUnitTestCase
             'correo' => 'Ana@ucatolica.ac.cr',
         ]);
         $attendance = new AttendanceService();
-        $session = $attendance->create((int) $course['id'], [
-            'fecha' => '2025-05-10', 'asistencias' => [['matricula_id' => $ana['id'], 'condicion' => 'presente']],
+        $sessionId = (int) $attendance->sessions((int) $course['id'])[0]['id'];
+        $session = $attendance->update($sessionId, [
+            'asistencias' => [['matricula_id' => $ana['id'], 'condicion' => 'presente']],
         ]);
         $bob = $enrollment->enroll((int) $course['id'], [
             'nombre' => 'Bob', 'primer_apellido' => 'Tres', 'segundo_apellido' => 'Cuatro',
@@ -151,7 +152,10 @@ final class BackendFlowTest extends CIUnitTestCase
         $this->assertSame('justificado', $this->testDb->table('asistencias')
             ->where('sesion_id', $session['id'])->where('matricula_id', $bob['id'])->get()->getRow('condicion'));
         $attendance->update((int) $session['id'], [
-            'asistencias' => [['matricula_id' => $bob['id'], 'condicion' => 'presente']],
+            'asistencias' => [
+                ['matricula_id' => $ana['id'], 'condicion' => 'presente'],
+                ['matricula_id' => $bob['id'], 'condicion' => 'presente'],
+            ],
         ]);
         $activityId = (int) $this->testDb->table('actividades_individuales')
             ->where('componente_id', $component['id'])->get()->getRow('id');
@@ -188,7 +192,7 @@ final class BackendFlowTest extends CIUnitTestCase
     public function testStudentCardsIncludeCatalogNameAndComponentActivityCount(): void
     {
         $quarter = (new CourseService())->createQuarter([
-            'codigo' => '1-2026', 'fecha_inicio' => '2026-01-01', 'fecha_cierre' => '2026-04-30',
+            'codigo' => '1-2026', 'fecha_inicio' => '2026-01-01', 'fecha_cierre' => '2026-04-09',
         ]);
         $course = (new CourseService())->createCourse([
             'cuatrimestre_id' => (int) $quarter['id'], 'nombre' => 'Curso', 'codigo' => 'C1', 'numero_grupo' => 1,
@@ -251,7 +255,7 @@ final class BackendFlowTest extends CIUnitTestCase
         $this->assertFalse($catalog->update($catalogId, ['nombre' => 'Prueba parcial'])['en_uso']);
 
         $courses = new CourseService();
-        $quarter = $courses->createQuarter(['codigo' => '1-2025', 'fecha_inicio' => '2025-01-01', 'fecha_cierre' => '2025-04-30']);
+        $quarter = $courses->createQuarter(['codigo' => '1-2025', 'fecha_inicio' => '2025-01-01', 'fecha_cierre' => '2025-04-09']);
         $course = $courses->createCourse([
             'cuatrimestre_id' => (int) $quarter['id'], 'nombre' => 'Curso', 'codigo' => 'C1', 'numero_grupo' => 1,
         ]);
@@ -307,7 +311,7 @@ final class BackendFlowTest extends CIUnitTestCase
     public function testPercentageDistributionKeepsPerActivityScoreAndGradeBoundaries(): void
     {
         $courses = new CourseService();
-        $quarter = $courses->createQuarter(['codigo' => '3-2025', 'fecha_inicio' => '2025-09-01', 'fecha_cierre' => '2025-12-31']);
+        $quarter = $courses->createQuarter(['codigo' => '3-2025', 'fecha_inicio' => '2025-09-01', 'fecha_cierre' => '2025-12-08']);
         $course = $courses->createCourse(['cuatrimestre_id' => (int) $quarter['id'], 'nombre' => 'Matemáticas', 'codigo' => 'M1', 'numero_grupo' => 1]);
         $catalogId = (int) $this->testDb->table('catalogo_actividades')->get()->getRow('id');
         $evaluation = new EvaluationService();
@@ -374,7 +378,7 @@ final class BackendFlowTest extends CIUnitTestCase
     public function testHistoricalScoreBelowNewMinimumRemainsGradable(): void
     {
         $courses = new CourseService();
-        $quarter = $courses->createQuarter(['codigo' => '2-2024', 'fecha_inicio' => '2024-05-01', 'fecha_cierre' => '2024-08-31']);
+        $quarter = $courses->createQuarter(['codigo' => '2-2024', 'fecha_inicio' => '2024-05-01', 'fecha_cierre' => '2024-08-07']);
         $course = $courses->createCourse(['cuatrimestre_id' => (int) $quarter['id'], 'nombre' => 'Curso histórico', 'codigo' => 'H1', 'numero_grupo' => 1]);
         $catalogId = (int) $this->testDb->table('catalogo_actividades')->get()->getRow('id');
         $this->testDb->table('componentes_evaluacion')->insert([
@@ -407,39 +411,90 @@ final class BackendFlowTest extends CIUnitTestCase
         }
     }
 
-    public function testAttendanceRequiresEveryStudentAndRespectsQuarterDates(): void
+    public function testQuarterCalendarAndAttendanceOnExistingSessions(): void
     {
         $courses = new CourseService();
-        $quarter = $courses->createQuarter(['codigo' => '1-2024', 'fecha_inicio' => '2024-01-01', 'fecha_cierre' => '2024-04-30']);
+        $quarter = $courses->createQuarter(['codigo' => '1-2024', 'fecha_inicio' => '2024-01-01', 'fecha_cierre' => '2024-04-08']);
         $course = $courses->createCourse(['cuatrimestre_id' => (int) $quarter['id'], 'nombre' => 'Curso', 'codigo' => 'C1', 'numero_grupo' => 1]);
+        $this->assertSame(15, $this->testDb->table('sesiones_cuatrimestre')->where('cuatrimestre_id', $quarter['id'])->countAllResults());
+        $attendance = new AttendanceService();
+        $sessions = $attendance->sessions((int) $course['id']);
+        $this->assertCount(15, $sessions);
+        $this->assertSame('2024-01-01', $sessions[0]['fecha']);
+        $this->assertSame('2024-04-08', $sessions[14]['fecha']);
+        $this->assertSame(15, $sessions[14]['numero']);
+        $this->assertFalse($sessions[0]['asistencia_registrada']);
+        $this->assertSame([], $sessions[0]['asistencias']);
         $student = (new EnrollmentService())->enroll((int) $course['id'], [
             'nombre' => 'Ana', 'primer_apellido' => 'Uno', 'segundo_apellido' => 'Dos', 'correo' => 'ana@ucatolica.ac.cr',
         ]);
-        $attendance = new AttendanceService();
-        foreach ([['fecha' => '2023-12-31', 'asistencias' => []], ['fecha' => '2024-01-01', 'asistencias' => []]] as $input) {
+        $this->assertSame(0, $this->testDb->table('asistencias')->countAllResults());
+        try {
+            $attendance->update((int) $sessions[0]['id'], ['asistencias' => []]);
+            $this->fail('La captura incompleta debe rechazarse.');
+        } catch (ApiError $error) {
+            $this->assertSame(400, $error->status);
+        }
+        $entry = [['matricula_id' => $student['id'], 'condicion' => 'presente']];
+        $saved = $attendance->update((int) $sessions[0]['id'], ['asistencias' => $entry]);
+        $this->assertTrue($saved['asistencia_registrada']);
+        $this->assertCount(1, $saved['asistencias']);
+        $this->assertFalse($attendance->sessions((int) $course['id'])[1]['asistencia_registrada']);
+        $this->assertCount(1, (new ReportService())->studentAttendance((int) $course['id'], (int) $student['estudiante_id']));
+        $second = (new EnrollmentService())->enroll((int) $course['id'], [
+            'nombre' => 'Luis', 'primer_apellido' => 'Tres', 'segundo_apellido' => 'Cuatro', 'correo' => 'luis@ucatolica.ac.cr',
+        ]);
+        $this->assertSame(1, $this->testDb->table('asistencias')->where('matricula_id', $second['id'])->countAllResults());
+        $this->assertSame('justificado', $this->testDb->table('asistencias')->where('matricula_id', $second['id'])->get()->getRow('condicion'));
+        try {
+            $attendance->update((int) $sessions[0]['id'], ['asistencias' => $entry]);
+            $this->fail('La corrección parcial debe rechazarse.');
+        } catch (ApiError $error) {
+            $this->assertSame(400, $error->status);
+        }
+        $attendance->update((int) $sessions[0]['id'], ['asistencias' => [
+            $entry[0], ['matricula_id' => $second['id'], 'condicion' => 'ausente'],
+        ]]);
+        $this->assertSame('ausente', $this->testDb->table('asistencias')->where('matricula_id', $second['id'])->get()->getRow('condicion'));
+    }
+
+    public function testQuarterRequiresExactlyNinetyEightDaysAndManualSessionRouteIsGone(): void
+    {
+        $service = new CourseService();
+        foreach (['2026-12-08', '2026-12-10'] as $end) {
             try {
-                $attendance->create((int) $course['id'], $input);
-                $this->fail('La sesión inválida debe rechazarse.');
+                $service->createQuarter([
+                    'codigo' => '3-2026', 'fecha_inicio' => '2026-09-02', 'fecha_cierre' => $end,
+                ]);
+                $this->fail('La duración distinta de 98 días debe rechazarse.');
             } catch (ApiError $error) {
                 $this->assertSame(400, $error->status);
             }
         }
-        $entry = [['matricula_id' => $student['id'], 'condicion' => 'presente']];
-        $attendance->create((int) $course['id'], ['fecha' => '2024-01-01', 'asistencias' => $entry]);
-        $attendance->create((int) $course['id'], ['fecha' => '2024-04-30', 'asistencias' => $entry]);
-        $this->assertCount(2, $attendance->sessions((int) $course['id']));
-        for ($day = 2; $day <= 14; $day++) {
-            $attendance->create((int) $course['id'], [
-                'fecha' => sprintf('2024-01-%02d', $day), 'asistencias' => $entry,
-            ]);
-        }
-        $this->assertCount(15, $attendance->sessions((int) $course['id']));
+        $this->assertSame(0, $this->testDb->table('sesiones_cuatrimestre')->countAllResults());
+        $quarter = $service->createQuarter([
+            'codigo' => '3-2026', 'fecha_inicio' => '2026-09-02', 'fecha_cierre' => '2026-12-09',
+        ]);
+        $course = $service->createCourse([
+            'cuatrimestre_id' => (int) $quarter['id'], 'nombre' => 'Informática', 'codigo' => 'PD008', 'numero_grupo' => 1,
+        ]);
+        $this->assertSame(15, $this->testDb->table('sesiones_cuatrimestre')->countAllResults());
+        $this->assertSame(15, $this->testDb->table('sesiones_asistencia')->countAllResults());
+        $this->assertSame(0, $this->testDb->table('asistencias')->countAllResults());
+        $sessions = (new AttendanceService())->sessions((int) $course['id']);
+        $this->assertSame('2026-09-02', $sessions[0]['fecha']);
+        $this->assertSame('2026-12-09', $sessions[14]['fecha']);
+        $this->assertFalse($sessions[0]['asistencia_registrada']);
         try {
-            $attendance->create((int) $course['id'], ['fecha' => '2024-01-15', 'asistencias' => $entry]);
-            $this->fail('La sesión dieciséis debe rechazarse.');
+            (new AttendanceService())->update((int) $sessions[0]['id'], ['asistencias' => []]);
+            $this->fail('No se registra asistencia sin matrículas.');
         } catch (ApiError $error) {
-            $this->assertSame(409, $error->status);
+            $this->assertSame(400, $error->status);
         }
+        $this->expectException(\CodeIgniter\Exceptions\PageNotFoundException::class);
+        $this->jsonRequest('POST', 'api/profesor/cursos/' . $course['id'] . '/sesiones', [
+            'fecha' => '2026-09-02', 'asistencias' => [],
+        ]);
     }
 
     public function testInitialCatalogCaseSensitiveEmailAndCrossCourseGrade(): void
@@ -448,7 +503,7 @@ final class BackendFlowTest extends CIUnitTestCase
         $this->assertSame(7, $this->testDb->table('catalogo_actividades')->countAllResults());
         $this->assertSame(1, $this->testDb->table('catalogo_actividades')->where('nombre', 'INDAGACION Y EXPOSICION')->countAllResults());
         $courses = new CourseService();
-        $quarter = $courses->createQuarter(['codigo' => '2-2024', 'fecha_inicio' => '2024-05-01', 'fecha_cierre' => '2024-08-31']);
+        $quarter = $courses->createQuarter(['codigo' => '2-2024', 'fecha_inicio' => '2024-05-01', 'fecha_cierre' => '2024-08-07']);
         $first = $courses->createCourse(['cuatrimestre_id' => (int) $quarter['id'], 'nombre' => 'Grupo uno', 'codigo' => 'C1', 'numero_grupo' => 1]);
         $second = $courses->createCourse(['cuatrimestre_id' => (int) $quarter['id'], 'nombre' => 'Grupo dos', 'codigo' => 'C1', 'numero_grupo' => 2]);
         $enrollments = new EnrollmentService();
@@ -476,7 +531,7 @@ final class BackendFlowTest extends CIUnitTestCase
     public function testEachContributionIsTruncatedBeforeTheCourseSum(): void
     {
         $courses = new CourseService();
-        $quarter = $courses->createQuarter(['codigo' => '3-2024', 'fecha_inicio' => '2024-09-01', 'fecha_cierre' => '2024-12-31']);
+        $quarter = $courses->createQuarter(['codigo' => '3-2024', 'fecha_inicio' => '2024-09-01', 'fecha_cierre' => '2024-12-08']);
         $course = $courses->createCourse(['cuatrimestre_id' => (int) $quarter['id'], 'nombre' => 'Curso', 'codigo' => 'C1', 'numero_grupo' => 1]);
         $catalogId = (int) $this->testDb->table('catalogo_actividades')->get()->getRow('id');
         $component = (new EvaluationService())->createComponent((int) $course['id'], [
@@ -499,7 +554,7 @@ final class BackendFlowTest extends CIUnitTestCase
     public function testSpecificTareasCorrectionPreservesWeightsAndOtherComponents(): void
     {
         $courses = new CourseService();
-        $quarter = $courses->createQuarter(['codigo' => '3-2026', 'fecha_inicio' => '2026-09-01', 'fecha_cierre' => '2026-12-31']);
+        $quarter = $courses->createQuarter(['codigo' => '3-2026', 'fecha_inicio' => '2026-09-01', 'fecha_cierre' => '2026-12-08']);
         $course = $courses->createCourse([
             'cuatrimestre_id' => (int) $quarter['id'], 'nombre' => 'Informática Aplicada 1',
             'codigo' => 'PD008', 'numero_grupo' => 1,
@@ -550,7 +605,7 @@ final class BackendFlowTest extends CIUnitTestCase
             'correo' => 'profesor@ucatolica.ac.cr', 'contrasena' => 'clave-prueba',
         ])->getJSON(), true)['data']['token'];
         $courses = new CourseService();
-        $quarter = $courses->createQuarter(['codigo' => '1-2099', 'fecha_inicio' => '2099-01-01', 'fecha_cierre' => '2099-04-30']);
+        $quarter = $courses->createQuarter(['codigo' => '1-2099', 'fecha_inicio' => '2099-01-01', 'fecha_cierre' => '2099-04-09']);
         $course = $courses->createCourse(['cuatrimestre_id' => (int) $quarter['id'], 'nombre' => 'Curso', 'codigo' => 'C1', 'numero_grupo' => 1]);
         $otherCourse = $courses->createCourse(['cuatrimestre_id' => (int) $quarter['id'], 'nombre' => 'Otro grupo', 'codigo' => 'C1', 'numero_grupo' => 2]);
         $catalogId = (int) $this->testDb->table('catalogo_actividades')->get()->getRow('id');
@@ -571,8 +626,8 @@ final class BackendFlowTest extends CIUnitTestCase
             'nombre' => 'Ana', 'primer_apellido' => 'Uno', 'segundo_apellido' => 'Dos',
             'correo' => 'ana@ucatolica.ac.cr',
         ]);
-        (new AttendanceService())->create((int) $course['id'], [
-            'fecha' => '2099-01-01',
+        $firstSession = (new AttendanceService())->sessions((int) $course['id'])[0];
+        (new AttendanceService())->update((int) $firstSession['id'], [
             'asistencias' => [['matricula_id' => $student['id'], 'condicion' => 'presente']],
         ]);
         $activityIds = array_column($this->testDb->table('actividades_individuales')
@@ -605,7 +660,7 @@ final class BackendFlowTest extends CIUnitTestCase
         $this->assertCount(1, $evaluation->components((int) $course['id']));
         $this->assertSame((int) $remaining['id'], (int) $evaluation->components((int) $course['id'])[0]['id']);
         $this->assertSame(1, $this->testDb->table('matriculas')->countAllResults());
-        $this->assertSame(1, $this->testDb->table('sesiones_asistencia')->countAllResults());
+        $this->assertSame(30, $this->testDb->table('sesiones_asistencia')->countAllResults());
         $this->assertSame(1, $this->testDb->table('asistencias')->countAllResults());
         $this->assertSame(2, $this->testDb->table('cursos')->countAllResults());
         $this->assertSame(1, $this->testDb->table('componentes_evaluacion')->where('id', $other['id'])->countAllResults());
@@ -624,7 +679,7 @@ final class BackendFlowTest extends CIUnitTestCase
             'correo' => 'profesor@ucatolica.ac.cr', 'contrasena' => 'clave-prueba',
         ])->getJSON(), true)['data']['token'];
         $courses = new CourseService();
-        $quarter = $courses->createQuarter(['codigo' => '1-2099', 'fecha_inicio' => '2099-01-01', 'fecha_cierre' => '2099-04-30']);
+        $quarter = $courses->createQuarter(['codigo' => '1-2099', 'fecha_inicio' => '2099-01-01', 'fecha_cierre' => '2099-04-09']);
         $course = $courses->createCourse(['cuatrimestre_id' => (int) $quarter['id'], 'nombre' => 'Curso', 'codigo' => 'C1', 'numero_grupo' => 1]);
         $catalogId = (int) $this->testDb->table('catalogo_actividades')->get()->getRow('id');
         $component = (new EvaluationService())->createComponent((int) $course['id'], [
@@ -651,7 +706,7 @@ final class BackendFlowTest extends CIUnitTestCase
     public function testCourseCannotBeDeletedBeforeQuarterCloses(): void
     {
         $courses = new CourseService();
-        $quarter = $courses->createQuarter(['codigo' => '1-2099', 'fecha_inicio' => '2099-01-01', 'fecha_cierre' => '2099-04-30']);
+        $quarter = $courses->createQuarter(['codigo' => '1-2099', 'fecha_inicio' => '2099-01-01', 'fecha_cierre' => '2099-04-09']);
         $course = $courses->createCourse(['cuatrimestre_id' => (int) $quarter['id'], 'nombre' => 'Curso', 'codigo' => 'C1', 'numero_grupo' => 1]);
         try {
             $courses->deleteCourse((int) $course['id']);

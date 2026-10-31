@@ -27,7 +27,6 @@ $routes->group('api/profesor', ['filter' => 'jwt:profesor'], static function ($r
     $routes->get('cursos/(:num)/matriculas', 'EnrollmentController::enrollments/$1');
     $routes->post('cursos/(:num)/matriculas', 'EnrollmentController::enroll/$1');
     $routes->get('cursos/(:num)/sesiones', 'AttendanceController::sessions/$1');
-    $routes->post('cursos/(:num)/sesiones', 'AttendanceController::create/$1');
     $routes->put('sesiones/(:num)/asistencias', 'AttendanceController::update/$1');
     $routes->get('cursos/(:num)/concentrado', 'ReportController::professorConcentrate/$1');
     $routes->get('cursos/(:num)/concentrado.xlsx', 'ReportController::professorXlsx/$1');

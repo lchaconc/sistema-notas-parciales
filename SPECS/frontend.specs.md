@@ -4,6 +4,8 @@
 
 El frontend permite al único profesor gestionar cursos, evaluaciones, matrículas, calificaciones y asistencia, y a cada estudiante consultar sus propios resultados y cambiar su contraseña. Esta especificación desarrolla [general.md](general.md) con las restricciones de [AGENTS.md](../AGENTS.md). El documento [requerimientos-iniciales.docx](requerimientos-iniciales.docx) aporta el origen de los flujos; las decisiones posteriores registradas en los Markdown prevalecen cuando lo precisan. El contrato HTTP vigente es [API-DOCS/openapi.yaml](../API-DOCS/openapi.yaml), resumido en [backend.api.md](backend.api.md).
 
+La automatización semanal descrita aquí está implementada junto con la migración de base y el contrato HTTP vigente en OpenAPI.
+
 Este documento describe el comportamiento esperado del cliente. El usuario autorizó su implementación. La ejecución se organiza en [frontend.tasks.md](frontend.tasks.md) y se verifica mediante [frontend.criteria.md](frontend.criteria.md).
 
 La tabla editable de **Calificaciones** descrita aquí se implementa en el cliente y reutiliza el contrato de API vigente.
@@ -43,7 +45,7 @@ El rótulo de las tarjetas de calificaciones del estudiante está implementado e
 | Necesidad de interfaz | Datos y operación de API |
 | --- | --- |
 | Consultar cuatrimestres y sus fechas | `GET /api/profesor/cuatrimestres`: `id`, `codigo`, `fecha_inicio`, `fecha_cierre`. |
-| Crear cuatrimestre | `POST /api/profesor/cuatrimestres` con `codigo` en formato `N-AAAA` (`N` de 1 a 3), `fecha_inicio` y `fecha_cierre`; el inicio no puede ser posterior al cierre. |
+| Crear cuatrimestre | `POST /api/profesor/cuatrimestres` con `codigo` en formato `N-AAAA` (`N` de 1 a 3), `fecha_inicio` y `fecha_cierre`; el cierre debe ser exactamente 98 días después del inicio. La interfaz explica y muestra el rechazo de otra duración. |
 | Consultar cursos y grupos | `GET /api/profesor/cursos`: nombre, código, número de grupo, cuatrimestre y fechas compartidas. |
 | Crear curso | `POST /api/profesor/cursos` con `cuatrimestre_id`, `nombre`, `codigo` y `numero_grupo`. Se permiten códigos repetidos cuando cambia el cuatrimestre o el grupo. |
 | Eliminar curso | `DELETE /api/profesor/cursos/{cursoId}` únicamente después del cierre del cuatrimestre. Antes de solicitarlo, la interfaz pide confirmación explícita al profesor. |
@@ -72,7 +74,7 @@ La confirmación de eliminación informa que desaparecerán los datos propios de
 
 - `GET /api/profesor/estudiantes` permite consultar las cuentas estudiantiles registradas. Para un curso y grupo seleccionados, `GET /api/profesor/cursos/{cursoId}/matriculas` muestra sus matriculados.
 - El formulario de matrícula pide `nombre`, `primer_apellido`, `segundo_apellido` y `correo`; `POST /api/profesor/cursos/{cursoId}/matriculas` crea la matrícula o reutiliza el estudiante del mismo correo exacto. El frontend no crea una segunda cuenta por su cuenta ni cambia las mayúsculas del correo. El backend rechaza un correo del profesor, un dominio no permitido o una matrícula duplicada.
-- El cliente valida formato de correo, pero no fija en el frontend una lista cerrada de dominios: la API consulta `dominios_permitidos` y podría admitir otros en el futuro. Si la matrícula ocurre después de sesiones guardadas, la API incorpora al estudiante en esas sesiones con condición inicial **justificado**; la interfaz muestra ese estado cuando consulta nuevamente la asistencia.
+- El cliente valida formato de correo, pero no fija en el frontend una lista cerrada de dominios: la API consulta `dominios_permitidos` y podría admitir otros en el futuro. Si la matrícula ocurre después de sesiones con asistencia registrada, la API incorpora al estudiante solo en esas sesiones con condición inicial **justificado**; las programadas pendientes no reciben condición. La interfaz muestra el estado al consultar nuevamente.
 - Para **Generar contraseña**, el profesor selecciona al estudiante y solicita `POST /api/profesor/estudiantes/{estudianteId}/contrasena`. La API reemplaza la contraseña anterior y entrega `data.contrasena` una sola vez. La interfaz muestra esa contraseña al profesor para que la comunique por correo; la aplicación no envía el correo automáticamente. Nunca presenta ni guarda el hash.
 
 ### Calificaciones y observaciones
@@ -89,10 +91,9 @@ La confirmación de eliminación informa que desaparecerán los datos propios de
 
 ### Asistencia
 
-- `GET /api/profesor/cursos/{cursoId}/sesiones` permite revisar las sesiones y sus condiciones. La interfaz combina sus `matricula_id` con `GET /api/profesor/cursos/{cursoId}/matriculas` para identificar a cada estudiante por nombre.
-- **Crear asistencia** solicita fecha y presenta a todos los matriculados del curso. Cada uno debe recibir exactamente una condición: `presente`, `ausente` o `justificado`. El cliente envía `POST /api/profesor/cursos/{cursoId}/sesiones` con `fecha` y `asistencias: [{matricula_id, condicion}, ...]`.
-- Cada curso admite hasta quince sesiones, solo una por fecha, dentro del intervalo inclusivo del cuatrimestre. La interfaz muestra las fechas ya registradas y los rechazos del backend por duplicado, límite o fecha fuera de rango.
-- Una sesión guardada puede cargarse para corregir condiciones mediante `PUT /api/profesor/sesiones/{sesionId}/asistencias`. El profesor también puede modificar las condiciones `justificado` creadas por matrículas tardías. Tras guardar, la interfaz vuelve a consultar la sesión para reflejar el estado vigente.
+- `GET /api/profesor/cursos/{cursoId}/sesiones` permite revisar las quince sesiones programadas, numeradas y fechadas, con su estado pendiente o registrado y sus condiciones. La interfaz combina `matricula_id` con `GET /api/profesor/cursos/{cursoId}/matriculas` para identificar estudiantes.
+- La pestaña **Asistencia** ofrece la selección de una de esas quince sesiones mediante número y fecha. No ofrece «Nueva sesión», fecha editable ni solicitud `POST` de sesión. Muestra si la asistencia elegida está pendiente o registrada.
+- Para la primera captura y cada corrección, presenta a todos los matriculados del curso y exige exactamente una condición `presente`, `ausente` o `justificado` por cada uno. Envía `PUT /api/profesor/sesiones/{sesionId}/asistencias` con `asistencias: [{matricula_id, condicion}, ...]`; al guardar vuelve a consultar la sesión. El profesor puede corregir los `justificado` de matrículas tardías. Sin matrículas no se habilita el guardado.
 
 ### Concentrado por curso y grupo
 
@@ -107,7 +108,7 @@ La confirmación de eliminación informa que desaparecerán los datos propios de
 - El rótulo de la parte superior de cada tarjeta se forma con el nombre de la actividad del catálogo asociada al componente. Con `cantidad_actividades = 1`, muestra **solo** ese nombre: «proyecto», sin el número ni «Actividad 1». Con `cantidad_actividades > 1`, muestra ese nombre, un espacio y `numero`, numerado dentro del componente: «tarea 1», «tarea 2», etc., aunque el título del componente sea «Tareas». El título del componente sigue visible por separado debajo del rótulo. El cliente no obtiene el nombre desde el título, no singulariza palabras y no usa el orden de las tarjetas como número. El texto conserva la grafía recibida del catálogo; la cabecera mantiene el estilo visual actual que lo muestra en mayúsculas.
 - Cada elemento de `tarjetas` entrega `id`, `titulo`, `numero`, `actividad_catalogo`, `cantidad_actividades`, `nota`, `porcentaje_obtenido` y `observacion`. `actividad_catalogo` es el nombre de la opción del catálogo asociada al componente y `cantidad_actividades` es la cantidad de actividades de ese componente. El cliente usa esos campos y el `numero` de la misma tarjeta. La respuesta, [backend.api.md](backend.api.md) y `API-DOCS/openapi.yaml` están alineados; el concentrado no cambia de estructura.
 - En cada tarjeta de **Calificaciones** del estudiante, la sección completa de observación, incluido el rótulo «Observación», se renderiza únicamente cuando `observacion` contiene texto no vacío. Si llega `null`, una cadena vacía o solo espacios en blanco, no se renderiza esa sección ni el mensaje «Sin observación registrada.». Cuando sí hay texto, se muestra bajo el rótulo «Observación» sin sustituirlo. Este criterio afecta únicamente a la presentación: no cambia el campo `observacion` de la respuesta ni el editor del profesor.
-- `GET /api/estudiante/cursos/{cursoId}/asistencia` muestra fecha y condición (`presente`, `ausente` o `justificado`) de cada sesión de ese curso.
+- `GET /api/estudiante/cursos/{cursoId}/asistencia` muestra fecha y condición (`presente`, `ausente` o `justificado`) solo de sesiones con asistencia registrada para el estudiante. Las fechas programadas pendientes no aparecen, aunque ya hayan pasado.
 - `GET /api/estudiante/cursos/{cursoId}/concentrado` presenta una tabla por curso con las propias notas y porcentajes obtenidos por actividad individual. Usa únicamente el registro del estudiante entregado por la API. No incluye observaciones, puntaje máximo ni total del curso en esa tabla y no ofrece descarga `.xlsx`.
 - En **Perfil > Cambiar contraseña**, el estudiante introduce la nueva contraseña y el frontend envía `PUT /api/estudiante/perfil/contrasena` con `contrasena_nueva`. La API guarda el hash; el cliente no recibe ni muestra el hash.
 - El frontend no solicita datos de otro estudiante y no ofrece funciones de gestión del profesor al rol estudiante. La API verifica además que cada curso consultado pertenezca a su matrícula.

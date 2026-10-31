@@ -5,12 +5,23 @@ import { AttendancePanel } from './CourseRecords.jsx';
 
 afterEach(cleanup);
 
-test('la carga de sesiones no borra la fecha escrita para una sesión nueva', async () => {
-  let resolveSessions;
-  const sessions = new Promise((resolve) => { resolveSessions = resolve; });
-  const api = { get: vi.fn((path) => path.endsWith('/matriculas') ? Promise.resolve([{ id: 1, nombre: 'Ana', primer_apellido: 'Solís', segundo_apellido: 'Rojas', correo: 'ana@ucatolica.ac.cr' }]) : sessions) };
-  render(<AttendancePanel api={api} course={{ id: 1, fecha_inicio: '2098-01-01', fecha_cierre: '2098-04-30' }} />);
-  fireEvent.change(screen.getByLabelText('Fecha'), { target: { value: '2098-01-08' } });
-  resolveSessions([]);
-  await waitFor(() => expect(screen.getByLabelText('Fecha').value).toBe('2098-01-08'));
+test('registra asistencia en una sesión programada sin crear fechas manuales', async () => {
+  const people = [{ id: 1, nombre: 'Ana', primer_apellido: 'Solís', segundo_apellido: 'Rojas', correo: 'ana@ucatolica.ac.cr' }];
+  const session = { id: 7, curso_id: 1, numero: 1, fecha: '2026-09-02', asistencia_registrada: false, asistencias: [] };
+  const api = {
+    get: vi.fn((path) => Promise.resolve(path.endsWith('/matriculas') ? people : [session])),
+    put: vi.fn(() => Promise.resolve({ ...session, asistencia_registrada: true })),
+    post: vi.fn(),
+  };
+  render(<AttendancePanel api={api} course={{ id: 1 }} />);
+  await screen.findByRole('option', { name: /Sesión 1.*2026-09-02.*Pendiente/ });
+  expect(screen.queryByText('Nueva sesión')).toBeNull();
+  expect(screen.queryByLabelText('Fecha')).toBeNull();
+  fireEvent.change(screen.getByLabelText('Sesión'), { target: { value: '7' } });
+  fireEvent.change(screen.getByLabelText('Condición de Ana Solís Rojas'), { target: { value: 'presente' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Registrar asistencia' }));
+  await waitFor(() => expect(api.put).toHaveBeenCalledWith('/profesor/sesiones/7/asistencias', {
+    asistencias: [{ matricula_id: 1, condicion: 'presente' }],
+  }));
+  expect(api.post).not.toHaveBeenCalled();
 });

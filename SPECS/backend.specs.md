@@ -6,7 +6,9 @@ El backend ofrece una API para gestionar cursos, estudiantes, evaluaciones, cali
 
 **Alcance de este documento:** comportamiento y responsabilidades del backend. No define rutas HTTP concretas, nombres de tablas, estructura exacta de respuestas, bibliotecas JWT o diseño físico de la base de datos.
 
-La eliminación individual de componentes está implementada en el backend y documentada en [backend.api.md](backend.api.md) y OpenAPI. Su control visual en el frontend sigue pendiente.
+La eliminación individual de componentes está implementada en el backend, el frontend y OpenAPI.
+
+La generación semanal de sesiones descrita a continuación está implementada en la base, el backend, OpenAPI y el frontend. La ruta de alta manual fue retirada.
 
 ## Plataforma y organización
 
@@ -26,15 +28,16 @@ La siguiente tabla define relaciones funcionales. No prescribe nombres de tablas
 | Profesor | Existe una sola cuenta con correo y hash de contraseña. Su correo no puede coincidir con el de ningún estudiante. |
 | Estudiante | Nombre, dos apellidos, correo único en toda la aplicación y hash de contraseña cuando se haya generado. Un estudiante puede tener varias matrículas. |
 | Dominio permitido | La tabla `dominios_permitidos` contiene los dominios de correo aceptados. Inicialmente contiene `ucatolica.ac.cr`; no tiene módulo CRUD en el aplicativo. |
-| Cuatrimestre | Identificador en formato `N-AAAA`, con `N` entre 1 y 3, fecha de inicio y fecha de cierre compartidas por sus cursos. |
+| Cuatrimestre | Identificador en formato `N-AAAA`, con `N` entre 1 y 3, fecha de inicio y fecha de cierre exactamente 98 días después, compartidas por sus cursos. |
+| Sesión del cuatrimestre | Fecha semanal numerada del 1 al 15, compartida por todos los cursos del cuatrimestre; la 1 coincide con el inicio y la 15 con el cierre. |
 | Curso o grupo | Nombre, código, número de grupo y cuatrimestre. El mismo código puede repetirse en otros cuatrimestres o grupos; la combinación de cuatrimestre, código y número de grupo distingue un curso. |
 | Actividad del catálogo | Opción reutilizable que el profesor puede crear, consultar, editar o eliminar mientras no esté asociada a un componente. |
 | Componente de evaluación | Pertenece a un curso y refiere a una actividad del catálogo. Contiene título, descripción, cantidad de actividades individuales, porcentaje total y puntaje por actividad. |
 | Actividad individual | Pertenece a un componente. Recibe una parte igual del porcentaje total, truncada a dos decimales, y el puntaje por actividad íntegro. |
 | Matrícula | Relaciona un estudiante con un curso; permite registrar sus calificaciones y asistencia en ese curso. |
 | Calificación | Registra los puntos obtenidos y una observación para una actividad individual y un estudiante matriculado. |
-| Sesión de asistencia | Pertenece a un curso y tiene una fecha. Cada curso tiene quince sesiones; solo se admite una sesión por curso y fecha. |
-| Condición de asistencia | Para cada estudiante matriculado y sesión se registra exactamente una de estas condiciones: presente, ausente o justificado. |
+| Sesión de asistencia | Pertenece a un curso y referencia una sesión programada de su cuatrimestre. Se crean las quince al crear el curso; cada una distingue asistencia pendiente de asistencia registrada. |
+| Condición de asistencia | Para cada estudiante matriculado y sesión cuya asistencia está registrada existe exactamente una condición: presente, ausente o justificado. Una sesión pendiente no tiene condiciones. |
 
 ## Autenticación y autorización
 
@@ -65,10 +68,10 @@ La siguiente tabla define relaciones funcionales. No prescribe nombres de tablas
 
 ### Cuatrimestres y cursos
 
-- Registrar el cuatrimestre con el formato `N-AAAA` y sus fechas de inicio y cierre. Los cursos del mismo cuatrimestre comparten esas fechas.
-- Crear un curso con nombre, código, número de grupo y cuatrimestre. Dos cursos pueden compartir código y cuatrimestre si tienen números de grupo diferentes.
+- Registrar el cuatrimestre con el formato `N-AAAA` y sus fechas de inicio y cierre. Rechazar el alta si el cierre no está exactamente 98 días después del inicio; esto garantiza que ambos extremos caen en el mismo día de la semana. En la misma transacción crear las quince sesiones de `sesiones_cuatrimestre`, con `numero` de 1 a 15 y `fecha = fecha_inicio + (numero - 1) × 7 días`. Una falla no deja un cuatrimestre ni un calendario parcial.
+- Crear un curso con nombre, código, número de grupo y cuatrimestre. Dos cursos pueden compartir código y cuatrimestre si tienen números de grupo diferentes. En la misma transacción crear sus quince sesiones de asistencia vinculadas, una a cada sesión del cuatrimestre; inicialmente ninguna tiene condiciones registradas. Una falla no deja un curso con calendario parcial.
 - Permitir eliminar un curso únicamente después de la fecha de cierre de su cuatrimestre y después de recibir confirmación del profesor en el flujo del frontend.
-- Al eliminar el curso, eliminar sus matrículas, componentes, actividades individuales, calificaciones, observaciones y asistencias. Conservar los registros de estudiantes y del cuatrimestre, aunque queden sin otros cursos. Conservar siempre las actividades del catálogo.
+- Al eliminar el curso, eliminar sus matrículas, componentes, actividades individuales, calificaciones, observaciones, sesiones propias y asistencias. Conservar los registros de estudiantes, del cuatrimestre y sus fechas compartidas, aunque queden sin otros cursos. Conservar siempre las actividades del catálogo.
 - La eliminación debe dejar los datos relacionados en un estado consistente: no deben quedar calificaciones, matrículas ni asistencias referidas al curso eliminado.
 
 ### Catálogo de actividades
@@ -115,11 +118,18 @@ La siguiente tabla define relaciones funcionales. No prescribe nombres de tablas
 
 ### Asistencia
 
-- Mantener quince sesiones de asistencia por curso. Cada sesión se identifica por el curso y la fecha; no permitir dos sesiones para el mismo curso en la misma fecha.
-- Rechazar una fecha de sesión anterior al inicio o posterior al cierre del cuatrimestre del curso. Las fechas de inicio y cierre sí están permitidas.
-- Al crear una sesión, presentar al profesor los estudiantes matriculados en ese curso y exigir una condición de asistencia para cada uno: presente, ausente o justificado.
-- Permitir consultar una sesión guardada y modificar sus condiciones de asistencia.
-- Al matricular a un estudiante después de que ya existen sesiones de asistencia en el curso, incorporarlo a cada sesión anterior con la condición **justificado**. Permitir al profesor modificar posteriormente la condición de ese estudiante en esas sesiones.
+- Mantener exactamente quince sesiones programadas por curso, identificadas por curso y número de la sesión del cuatrimestre. Su fecha procede del calendario compartido y no se edita. No se permite crear manualmente una sesión dieciséis ni una sesión para otra fecha.
+- Distinguir una sesión programada con asistencia pendiente de una cuya asistencia ya se registró. La mera creación anticipada de la sesión no genera filas en `asistencias` ni condiciones por defecto.
+- En la primera captura de una sesión existente, exigir una condición **presente**, **ausente** o **justificado** para todos y solo los estudiantes matriculados en ese curso. Guardar todas las condiciones y marcar la sesión como registrada en una transacción; no dejar un conjunto parcial. Las correcciones posteriores actualizan las condiciones de la misma sesión y vuelven a exigir el conjunto completo de matriculados.
+- Sin estudiantes matriculados, una sesión permanece pendiente y no admite registrar asistencia vacía.
+- Al matricular a un estudiante después de que alguna sesión ya tenga su asistencia registrada, incorporarlo a esas sesiones registradas con condición inicial **justificado**. No crear asistencia para sesiones aún pendientes, aunque sus fechas ya existan o hayan pasado; permitir corregir después las condiciones justificadas.
+- La consulta del estudiante muestra solo sesiones con condición registrada para su matrícula; omite las sesiones programadas pendientes.
+
+### Transición de datos existentes del cuatrimestre `3-2026`
+
+- La base de desarrollo contiene `3-2026` con inicio `2026-09-02` y cierre `2026-12-09`: son 98 días y ambas fechas son miércoles. No hace falta corregir sus fechas. El calendario migrado tendrá los quince miércoles desde el 2 de septiembre hasta el 9 de diciembre, inclusive.
+- Los cursos actuales de ese cuatrimestre son `PD008`, grupo 1, y `test-01`, grupo 1. `PD008` tiene una sesión del `2026-09-02` con diez asistencias para sus diez matrículas; la migración conserva su identificador, condiciones y relaciones, la vincula a la sesión 1 del cuatrimestre y la marca como registrada. Crea sus otras catorce sesiones como pendientes. `test-01` no tiene sesiones ni matrículas; recibe quince sesiones pendientes.
+- La migración valida primero que las fechas existentes correspondan al calendario semanal y que las asistencias registradas estén completas; si encuentra datos incompatibles, se detiene sin borrar ni reescribir registros. No inventa condiciones para sesiones pendientes. Se hace un respaldo antes de aplicarla y se comprueba después que los datos históricos conservados son equivalentes.
 
 ## Consultas y concentrados
 
@@ -154,10 +164,11 @@ La siguiente tabla define relaciones funcionales. No prescribe nombres de tablas
 - Un correo ajeno a los dominios de `dominios_permitidos` se rechaza al crear la cuenta del profesor o matricular a un estudiante.
 - Dos correos que solo difieren en mayúsculas y minúsculas se tratan como direcciones distintas al aplicar la unicidad.
 - Un componente nuevo admite porcentaje total y puntaje por actividad con hasta dos decimales; este último debe estar entre `1,00` y `100,00`. La creación de una actividad con nombre ya presente en el catálogo se rechaza aunque cambie el uso de mayúsculas, minúsculas o tildes.
-- Se rechaza crear una sesión de asistencia con fecha fuera del intervalo inclusivo del cuatrimestre del curso.
+- Se rechaza crear un cuatrimestre cuyo cierre no esté a 98 días de su inicio; una creación válida deja quince fechas semanales, con la primera y la última iguales a los extremos ingresados.
 - Una dirección de correo asignada al profesor no se acepta para un estudiante, ni una dirección de estudiante para crear la cuenta del profesor.
-- No se guarda una segunda sesión de asistencia con la misma fecha para un mismo curso, ni una sesión sin condición para alguno de los estudiantes matriculados incluidos en ella.
-- Si un estudiante se matricula después de tres sesiones registradas, aparece en las tres con condición inicial **justificado**; el profesor puede cambiar cada condición posteriormente.
+- Cada curso nuevo recibe una sola sesión por cada una de las quince fechas programadas, todas con asistencia pendiente; no se crean sesiones manuales ni condiciones al preparar el calendario.
+- No se registra una asistencia parcial: la primera captura y cada corrección abarcan a todos y solo los matriculados del curso. Si un estudiante se matricula después de tres sesiones con asistencia registrada, aparece en esas tres con condición inicial **justificado** y no recibe condición en las sesiones pendientes.
+- El estudiante solo consulta las sesiones para las que ya tiene una condición registrada.
 - Un estudiante matriculado en varios cursos conserva una sola cuenta y puede consultar únicamente sus propios datos agrupados por curso.
 - El concentrado visible del profesor y su archivo `.xlsx` para un curso y grupo contienen las mismas notas y porcentajes obtenidos; el estudiante no dispone de esa descarga.
 - Al eliminar un curso después del cierre del cuatrimestre, desaparecen sus datos propios y se conservan estudiantes, cuatrimestre y actividades del catálogo.

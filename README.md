@@ -15,6 +15,8 @@ El backend escucha en `http://localhost:8080`, la aplicación frontend en `http:
 
 Antes de aplicar migraciones en una base con datos, haga un respaldo. Después ejecute `docker compose exec backend php spark migrate`. La migración de puntaje por actividad conserva los puntajes individuales y las calificaciones de los componentes existentes. Los componentes nuevos reciben el puntaje completo indicado en cada actividad, entre `1,00` y `100,00` puntos; solo su porcentaje total se divide entre las actividades.
 
+La migración de sesiones valida que cada cuatrimestre existente dure exactamente 98 días y que sus sesiones históricas coincidan con alguna de las quince fechas semanales y tengan condiciones completas. Si encuentra una incompatibilidad, se detiene antes de alterar el esquema. Una vez aplicada, crea `sesiones_cuatrimestre` y completa quince sesiones por curso; conserva los identificadores y condiciones ya registrados. En la base de desarrollo, `3-2026` mantiene los miércoles `2026-09-02` y `2026-12-09`; la sesión 1 de `PD008` conserva sus diez asistencias. El profesor ahora selecciona una sesión programada y registra o corrige condiciones mediante `PUT`, sin crear fechas manuales.
+
 ## Conectar DBeaver a MySQL desde Windows
 
 En DBeaver, cree una conexión **MySQL** (tipo TCP/IP) con estos valores:

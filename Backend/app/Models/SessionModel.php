@@ -8,6 +8,6 @@ class SessionModel extends Model
 {
     protected $table = 'sesiones_asistencia';
     protected $primaryKey = 'id';
-    protected $allowedFields = ['curso_id', 'fecha'];
+    protected $allowedFields = ['curso_id', 'sesion_cuatrimestre_id', 'asistencia_registrada'];
     protected $returnType = 'array';
 }

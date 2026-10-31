@@ -107,6 +107,7 @@ paths:
     post:
       tags: [Cuatrimestres y cursos]
       summary: Crear cuatrimestre
+      description: La fecha de cierre debe estar exactamente 98 días después del inicio. Se generan quince fechas semanales en una transacción.
       operationId: createQuarter
       requestBody:
         required: true
@@ -133,6 +134,7 @@ paths:
     post:
       tags: [Cuatrimestres y cursos]
       summary: Crear curso y grupo
+      description: Se crean automáticamente quince sesiones pendientes, una por fecha programada del cuatrimestre.
       operationId: createCourse
       requestBody:
         required: true
@@ -380,30 +382,10 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '500': { $ref: '#/components/responses/InternalError' }
-    post:
-      tags: [Asistencia]
-      summary: Registrar una sesión de asistencia
-      description: |
-        La fecha debe estar dentro del cuatrimestre y ser única en el curso.
-        Se exige una condición para cada matriculado; máximo quince sesiones.
-      operationId: createSession
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema: { $ref: '#/components/schemas/SessionInput' }
-      responses:
-        '201': { $ref: '#/components/responses/SessionCreated' }
-        '400': { $ref: '#/components/responses/BadRequest' }
-        '401': { $ref: '#/components/responses/Unauthorized' }
-        '403': { $ref: '#/components/responses/Forbidden' }
-        '404': { $ref: '#/components/responses/NotFound' }
-        '409': { $ref: '#/components/responses/Conflict' }
-        '500': { $ref: '#/components/responses/InternalError' }
   /profesor/sesiones/{sesionId}/asistencias:
     put:
       tags: [Asistencia]
-      summary: Editar condiciones de una sesión anterior
+      summary: Registrar o corregir la asistencia de una sesión programada
       operationId: updateAttendance
       parameters:
         - $ref: '#/components/parameters/SesionId'
@@ -413,11 +395,12 @@ paths:
           application/json:
             schema: { $ref: '#/components/schemas/AttendanceUpdateInput' }
       responses:
-        '200': { $ref: '#/components/responses/Updated' }
+        '200': { $ref: '#/components/responses/AttendanceSaved' }
         '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
         '500': { $ref: '#/components/responses/InternalError' }
   /profesor/cursos/{cursoId}/concentrado:
     get:
@@ -616,7 +599,7 @@ components:
       properties:
         codigo: { type: string, pattern: '^[1-3]-\d{4}$', example: '2-2026' }
         fecha_inicio: { type: string, format: date, example: '2026-05-01' }
-        fecha_cierre: { type: string, format: date, example: '2026-08-31' }
+        fecha_cierre: { type: string, format: date, example: '2026-08-07', description: Exactamente 98 días después de fecha_inicio. }
     Quarter:
       allOf:
         - $ref: '#/components/schemas/QuarterInput'
@@ -784,30 +767,14 @@ components:
       properties:
         matricula_id: { type: integer, minimum: 1 }
         condicion: { type: string, enum: [presente, ausente, justificado] }
-    SessionInput:
-      type: object
-      required: [fecha, asistencias]
-      properties:
-        fecha: { type: string, format: date }
-        asistencias:
-          type: array
-          description: Exactamente una entrada por cada matriculado del curso.
-          items: { $ref: '#/components/schemas/AttendanceEntryInput' }
     AttendanceUpdateInput:
       type: object
       required: [asistencias]
       properties:
         asistencias:
           type: array
-          description: Condiciones existentes que se desean editar.
+          description: Exactamente una condición por cada matrícula vigente; sirve para el primer registro y para corregirlo. No se admite si no hay matrículas.
           items: { $ref: '#/components/schemas/AttendanceEntryInput' }
-    SessionCreatedData:
-      type: object
-      required: [id, curso_id, fecha]
-      properties:
-        id: { type: integer, minimum: 1 }
-        curso_id: { type: integer, minimum: 1 }
-        fecha: { type: string, format: date }
     SessionAttendance:
       allOf:
         - $ref: '#/components/schemas/AttendanceEntryInput'
@@ -816,14 +783,17 @@ components:
           properties:
             estudiante_id: { type: integer, minimum: 1 }
     Session:
-      allOf:
-        - $ref: '#/components/schemas/SessionCreatedData'
-        - type: object
-          required: [asistencias]
-          properties:
-            asistencias:
-              type: array
-              items: { $ref: '#/components/schemas/SessionAttendance' }
+      type: object
+      required: [id, curso_id, numero, fecha, asistencia_registrada, asistencias]
+      properties:
+        id: { type: integer, minimum: 1 }
+        curso_id: { type: integer, minimum: 1 }
+        numero: { type: integer, minimum: 1, maximum: 15 }
+        fecha: { type: string, format: date }
+        asistencia_registrada: { type: boolean, description: 'false si aún no se guardaron condiciones; entonces asistencias está vacío.' }
+        asistencias:
+          type: array
+          items: { $ref: '#/components/schemas/SessionAttendance' }
     ConcentrateActivity:
       type: object
       required: [id, titulo, numero]
@@ -1116,7 +1086,7 @@ components:
             properties:
               data: { $ref: '#/components/schemas/GradeDetailData' }
     SessionList:
-      description: Sesiones del curso con asistencia de cada estudiante.
+      description: Quince sesiones programadas ordenadas por número, incluidas las pendientes.
       content:
         application/json:
           schema:
@@ -1126,15 +1096,15 @@ components:
               data:
                 type: array
                 items: { $ref: '#/components/schemas/Session' }
-    SessionCreated:
-      description: Sesión y condiciones registradas.
+    AttendanceSaved:
+      description: Sesión existente con las condiciones completas guardadas.
       content:
         application/json:
           schema:
             type: object
             required: [data]
             properties:
-              data: { $ref: '#/components/schemas/SessionCreatedData' }
+              data: { $ref: '#/components/schemas/Session' }
     Concentrate:
       description: Tabla calculada al consultar la base de datos.
       content:

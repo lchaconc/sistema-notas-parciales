@@ -52,7 +52,7 @@ export function EnrollmentPanel({ api, course }) {
   const [form, setForm] = useState(initial); const [error, setError] = useState(''); const [message, setMessage] = useState(''); const [busy, setBusy] = useState(false);
   async function submit(event) {
     event.preventDefault(); setBusy(true); setError(''); setMessage('');
-    try { await api.post(`/profesor/cursos/${course.id}/matriculas`, form); await enrollments.reload(); setForm(initial); setMessage('Estudiante matriculado. Si había sesiones anteriores, su asistencia inicial es justificada.'); }
+    try { await api.post(`/profesor/cursos/${course.id}/matriculas`, form); await enrollments.reload(); setForm(initial); setMessage('Estudiante matriculado. Su asistencia en sesiones ya registradas es justificada.'); }
     catch (cause) { setError(cause.message); } finally { setBusy(false); }
   }
   return <><SectionTitle title="Matrícula" description="Al matricular un correo existente, se reutiliza la misma cuenta de estudiante." />

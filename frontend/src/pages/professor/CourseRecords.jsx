@@ -22,33 +22,31 @@ const conditions = ['presente', 'ausente', 'justificado'];
 export function AttendancePanel({ api, course }) {
   const people = useResource(() => api.get(`/profesor/cursos/${course.id}/matriculas`), [api, course.id]);
   const sessions = useResource(() => api.get(`/profesor/cursos/${course.id}/sesiones`), [api, course.id]);
-  const [sessionId, setSessionId] = useState('new'); const [date, setDate] = useState('');
+  const [sessionId, setSessionId] = useState('');
   const [entries, setEntries] = useState({}); const [error, setError] = useState(''); const [message, setMessage] = useState(''); const [busy, setBusy] = useState(false);
   const current = (sessions.data || []).find((session) => String(session.id) === sessionId);
   useEffect(() => {
-    if (sessionId === 'new') return;
     const selected = (sessions.data || []).find((session) => String(session.id) === sessionId);
-    if (selected) { setDate(selected.fecha); setEntries(Object.fromEntries(selected.asistencias.map((entry) => [entry.matricula_id, entry.condicion]))); }
+    if (selected) setEntries(Object.fromEntries(selected.asistencias.map((entry) => [entry.matricula_id, entry.condicion])));
   }, [sessionId, sessions.data]);
   async function submit(event) {
     event.preventDefault(); setError(''); setMessage('');
+    if (!current || !people.data?.length) return;
     const list = (people.data || []).map((person) => ({ matricula_id: Number(person.id), condicion: entries[person.id] }));
     if (list.some((entry) => !entry.condicion)) { setError('Asigne una condición a todos los estudiantes.'); return; }
     setBusy(true);
     try {
-      if (current) await api.put(`/profesor/sesiones/${current.id}/asistencias`, { asistencias: list });
-      else await api.post(`/profesor/cursos/${course.id}/sesiones`, { fecha: date, asistencias: list });
-      const refreshed = await sessions.reload();
-      if (!current) { const created = refreshed?.find((item) => item.fecha === date); if (created) setSessionId(String(created.id)); }
+      await api.put(`/profesor/sesiones/${current.id}/asistencias`, { asistencias: list });
+      await sessions.reload();
       setMessage('Asistencia guardada.');
     } catch (cause) { setError(cause.message); } finally { setBusy(false); }
   }
-  return <><SectionTitle title="Asistencia" description="Hasta quince sesiones por curso, una por fecha. Cada estudiante necesita una condición." />
-    <section className="panel"><div className="attendance-header"><Field label="Sesión"><select value={sessionId} onChange={(e) => { if (e.target.value === 'new') { setEntries({}); setDate(''); } setSessionId(e.target.value); setError(''); setMessage(''); }}><option value="new">Nueva sesión</option>{(sessions.data || []).map((session) => <option key={session.id} value={session.id}>{session.fecha}</option>)}</select></Field><Field label="Fecha"><input required type="date" min={course.fecha_inicio} max={course.fecha_cierre} value={date} disabled={Boolean(current)} onChange={(e) => setDate(e.target.value)} /></Field><span className="session-count">{(sessions.data || []).length} / 15 sesiones</span></div>
+  return <><SectionTitle title="Asistencia" description="Quince sesiones semanales programadas. Seleccione una sesión y registre una condición por estudiante." />
+    <section className="panel"><div className="attendance-header"><Field label="Sesión"><select value={sessionId} onChange={(e) => { setSessionId(e.target.value); setEntries({}); setError(''); setMessage(''); }}><option value="">Seleccione una sesión</option>{(sessions.data || []).map((session) => <option key={session.id} value={session.id}>Sesión {session.numero} · {session.fecha} · {session.asistencia_registrada ? 'Registrada' : 'Pendiente'}</option>)}</select></Field><span className="session-count">{current ? `Sesión ${current.numero}: ${current.asistencia_registrada ? 'asistencia registrada' : 'asistencia pendiente'}` : '15 sesiones programadas'}</span></div>
       <Feedback tone="error" message={error || people.error || sessions.error} /><Feedback tone="success" message={message} />
       {people.loading || sessions.loading ? <div className="state-panel">Cargando asistencia…</div> : <form onSubmit={submit} className="form-stack">{!people.data?.length && <div className="state-panel">Matricule estudiantes antes de registrar asistencia.</div>}
         <div className="attendance-list">{(people.data || []).map((person) => <div className="attendance-person" key={person.id}><div><strong>{fullName(person)}</strong><small>{person.correo}</small></div><select aria-label={`Condición de ${fullName(person)}`} required value={entries[person.id] || ''} onChange={(e) => setEntries({ ...entries, [person.id]: e.target.value })}><option value="">Seleccione condición</option>{conditions.map((condition) => <option key={condition} value={condition}>{condition[0].toUpperCase() + condition.slice(1)}</option>)}</select></div>)}</div>
-        <button className="button-primary" disabled={busy || !people.data?.length || (!current && sessions.data?.length >= 15)}>{busy ? 'Guardando…' : current ? 'Guardar cambios' : 'Crear sesión'}</button>
+        <button className="button-primary" disabled={busy || !people.data?.length || !current}>{busy ? 'Guardando…' : current?.asistencia_registrada ? 'Guardar cambios' : 'Registrar asistencia'}</button>
       </form>}</section>
   </>;
 }

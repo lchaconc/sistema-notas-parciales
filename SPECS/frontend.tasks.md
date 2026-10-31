@@ -40,7 +40,7 @@ Cada tarea funcional incluye la comprobación de sus estados de carga, vacío, �
 ### 4. Construir la navegación y la gestión básica del profesor
 
 - Mostrar **Cursos** como primera vista tras iniciar sesión. Construir el menú lateral con **Cursos, Cuatrimestres, Catálogo de actividades, Estudiantes y Cerrar sesión**; dentro de cada curso y grupo, las pestañas **Componentes, Matrícula, Calificaciones, Asistencia y Concentrado**.
-- Consultar y crear cuatrimestres con código y fechas; consultar y crear cursos con cuatrimestre, nombre, código y número de grupo. Identificar siempre un curso mediante cuatrimestre, código y grupo, ya que el código puede repetirse.
+- Consultar y crear cuatrimestres con código y fechas separadas exactamente por 98 días; consultar y crear cursos con cuatrimestre, nombre, código y número de grupo. Identificar siempre un curso mediante cuatrimestre, código y grupo, ya que el código puede repetirse.
 - Permitir eliminar un curso solo después de solicitar confirmación explícita que describa sus datos dependientes. Mantenerlo visible si la API rechaza la eliminación y actualizar la lista tras una respuesta correcta.
 - **Pruebas de flujo e integración:** vista inicial y navegación, fechas y campos inválidos, cursos con igual código en grupos distintos, aislamiento del contexto seleccionado, confirmación y cancelación de borrado, rechazo del backend y actualización posterior.
 
@@ -55,7 +55,7 @@ Cada tarea funcional incluye la comprobación de sus estados de carga, vacío, �
 
 - Consultar estudiantes y matrículas del curso; matricular con nombre, dos apellidos y correo, conservando mayúsculas y minúsculas. Actualizar la lista con la matrícula confirmada por la API y mostrar los rechazos por dominio, correo del profesor o matrícula duplicada.
 - Permitir al profesor generar una contraseña para un estudiante; mostrarla solo al recibir la respuesta de esa operación y explicar en esa vista que el profesor la comunica por correo. No almacenar ni registrar la contraseña en el cliente ni automatizar el envío.
-- Actualizar la matrícula y, si ya existían sesiones, la asistencia del curso para mostrar los registros iniciales `justificado` del estudiante incorporado tarde.
+- Actualizar la matrícula y la asistencia del curso para mostrar `justificado` solo en sesiones con asistencia registrada antes de incorporar al estudiante; las programadas pendientes no tienen condición.
 - **Pruebas de componentes e integración:** reutilización de un estudiante en varios cursos, correo exacto, duplicado, dominio rechazado, contraseña mostrada una sola vez en el flujo y asistencia previa tras matrícula tardía.
 
 ### 7. Reestructurar la captura de calificaciones y observaciones
@@ -69,9 +69,9 @@ Cada tarea funcional incluye la comprobación de sus estados de carga, vacío, �
 
 ### 8. Implementar sesiones y asistencia
 
-- Listar las sesiones de un curso y mostrar los estudiantes de cada una. Crear una sesión con fecha y una condición obligatoria para cada matrícula: `presente`, `ausente` o `justificado`.
-- Cargar una sesión existente y permitir corregir sus condiciones, incluidas las asistencias de sesiones anteriores creadas como `justificado` por matrícula tardía. Volver a consultar la sesión tras guardar.
-- **Pruebas de formularios e integración:** falta de condición, fecha fuera del cuatrimestre, fecha duplicada, límite de quince sesiones, edición de una sesión pasada, matrícula tardía y rechazo de datos que ya cambiaron en el servidor.
+- Listar las quince sesiones ya programadas de un curso con número, fecha y estado pendiente o registrado. Elegir una de ellas sin mostrar alta manual ni fecha editable.
+- Registrar por primera vez o corregir la asistencia de la sesión elegida mediante `PUT`, con una condición obligatoria `presente`, `ausente` o `justificado` para cada matrícula. Cargar y permitir corregir también las condiciones iniciales `justificado` de matrícula tardía. Volver a consultar tras guardar; bloquear guardado si no hay estudiantes.
+- **Pruebas de formularios e integración:** quince opciones y estados, ausencia de «Nueva sesión» y fecha editable, falta de condición, primer guardado, edición de una sesión pasada, matrícula tardía solo en sesiones registradas y rechazo de datos que ya cambiaron en el servidor. El contrato corresponde al paso 14 de [backend.tasks.md](backend.tasks.md).
 
 ### 9. Implementar el concentrado del profesor
 
@@ -83,7 +83,7 @@ Cada tarea funcional incluye la comprobación de sus estados de carga, vacío, �
 ### 10. Implementar el área del estudiante
 
 - Mostrar **Mis cursos** como entrada y el menú **Mis cursos, Perfil y Cerrar sesión**. Abrir cada curso con pestañas **Calificaciones, Asistencia y Concentrado**, sin mostrar funciones del profesor.
-- Presentar las tarjetas por actividad con nota, porcentaje efectivamente obtenido y observación, además del resultado del curso entregado por la API. Mostrar la asistencia por fecha y condición. Presentar el concentrado propio en tabla por curso con nota y porcentaje por actividad, sin descarga `.xlsx`.
+- Presentar las tarjetas por actividad con nota, porcentaje efectivamente obtenido y observación, además del resultado del curso entregado por la API. Mostrar solo la asistencia registrada del estudiante por fecha y condición; omitir sesiones programadas pendientes. Presentar el concentrado propio en tabla por curso con nota y porcentaje por actividad, sin descarga `.xlsx`.
 - Renderizar la sección «Observación» de una tarjeta del estudiante solo cuando `observacion` tenga texto no vacío. Omitir por completo rótulo, contenido y mensaje de reemplazo cuando sea `null`, cadena vacía o solo espacios. Conservar la observación real cuando exista; este ajuste de presentación no requiere una ruta ni un campo nuevo en la API.
 - Sustituir el rótulo genérico «Actividad {numero}» de las tarjetas del estudiante por el nombre de la actividad del catálogo. Si `cantidad_actividades = 1`, mostrar solo `actividad_catalogo`; si es mayor que 1, mostrar `actividad_catalogo` seguido de un espacio y `numero` dentro del componente. Conservar el título del componente como texto separado. No derivar el nombre desde el título ni singularizarlo. Cada tarjeta de `GET /api/estudiante/cursos/{cursoId}/calificaciones` incluye `actividad_catalogo` y `cantidad_actividades`; backend, contrato Markdown y OpenAPI están alineados. **Estado:** implementado.
 - En **Perfil > Cambiar contraseña**, enviar la nueva contraseña al endpoint del estudiante y mostrar el resultado de la operación sin exponer hashes.

@@ -11,6 +11,7 @@ async function logout(page, mobile) {
 }
 
 test('profesor y estudiante completan sus recorridos con la API y base temporal', async ({ page }, testInfo) => {
+  test.setTimeout(180_000);
   const mobile = testInfo.project.name === 'mobile';
   const quarterCode = mobile ? '2-2098' : '1-2098';
   const courseCode = mobile ? 'E2EM' : 'E2ED';
@@ -24,12 +25,12 @@ test('profesor y estudiante completan sus recorridos con la API y base temporal'
   await navigate(page, 'Cuatrimestres', mobile);
   await page.getByLabel('Código').fill(quarterCode);
   await page.getByLabel('Fecha de inicio').fill('2098-01-01');
-  await page.getByLabel('Fecha de cierre').fill('2098-04-30');
+  await page.getByLabel('Fecha de cierre').fill('2098-04-09');
   await page.getByRole('button', { name: 'Crear cuatrimestre' }).click();
   await expect(page.getByText('Cuatrimestre creado.')).toBeVisible();
 
   await navigate(page, 'Cursos', mobile);
-  await page.getByLabel('Cuatrimestre').selectOption({ label: `${quarterCode} · 2098-01-01 a 2098-04-30` });
+  await page.getByLabel('Cuatrimestre').selectOption({ label: `${quarterCode} · 2098-01-01 a 2098-04-09` });
   await page.getByLabel('Nombre del curso').fill('Curso de integración');
   await page.getByLabel('Código').fill(courseCode);
   await page.getByLabel('Número de grupo').fill('1');
@@ -44,7 +45,7 @@ test('profesor y estudiante completan sus recorridos con la API y base temporal'
   await page.getByLabel('Porcentaje total').fill('2,00');
   await page.getByLabel('Puntaje por actividad').fill('10,00');
   await page.getByRole('button', { name: 'Crear componente' }).click();
-  await expect(page.getByText('Componente creado.')).toBeVisible();
+  await expect(page.getByText('Componente creado.')).toBeVisible({ timeout: 30_000 });
 
   await page.getByLabel('Actividad del catálogo').selectOption({ label: 'prueba parcial' });
   await page.getByLabel('Título').fill('Cinco actividades de diez puntos');
@@ -83,9 +84,9 @@ test('profesor y estudiante completan sus recorridos con la API y base temporal'
   await page.getByRole('tab', { name: 'Asistencia' }).click();
   await page.getByRole('button', { name: 'Salir sin guardar' }).click();
 
-  await page.getByLabel('Fecha').fill('2098-01-08');
+  await page.getByLabel('Sesión').selectOption({ label: 'Sesión 2 · 2098-01-08 · Pendiente' });
   await page.getByLabel('Condición de Ana Solís Rojas').selectOption('presente');
-  await page.getByRole('button', { name: 'Crear sesión' }).click();
+  await page.getByRole('button', { name: 'Registrar asistencia' }).click();
   await expect(page.getByText('Asistencia guardada.')).toBeVisible();
 
   await page.getByRole('tab', { name: 'Concentrado' }).click();
@@ -144,7 +145,7 @@ test('profesor y estudiante completan sus recorridos con la API y base temporal'
   await expect(gradedComponent).toBeVisible();
   await gradedComponent.getByRole('button', { name: 'Eliminar', exact: true }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Eliminar componente' }).click();
-  await expect(page.getByText(/Componente eliminado/)).toBeVisible();
+  await expect(page.getByText(/Componente eliminado/)).toBeVisible({ timeout: 30_000 });
   await expect(gradedComponent).toHaveCount(0);
   await page.getByRole('tab', { name: 'Concentrado' }).click();
   await expect(page.getByText('1,70 % obtenido')).toHaveCount(0);

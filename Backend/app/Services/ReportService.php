@@ -121,11 +121,12 @@ class ReportService
     {
         $this->concentrate($courseId, $studentId);
         return db_connect()->table('asistencias a')
-            ->select('s.id AS sesion_id, s.fecha, a.condicion')
+            ->select('s.id AS sesion_id, sc.fecha, a.condicion')
             ->join('sesiones_asistencia s', 's.id = a.sesion_id')
+            ->join('sesiones_cuatrimestre sc', 'sc.id = s.sesion_cuatrimestre_id')
             ->join('matriculas m', 'm.id = a.matricula_id')
             ->where('m.curso_id', $courseId)->where('m.estudiante_id', $studentId)
-            ->orderBy('s.fecha')->get()->getResultArray();
+            ->orderBy('sc.fecha')->get()->getResultArray();
     }
 
     public function exportXlsx(int $courseId): string

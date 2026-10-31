@@ -11,15 +11,16 @@ export function QuarterPanel({ api }) {
   const [busy, setBusy] = useState(false);
   async function submit(event) {
     event.preventDefault(); setBusy(true); setError(''); setMessage('');
-    if (form.fecha_inicio > form.fecha_cierre) { setError('La fecha de inicio no puede ser posterior al cierre.'); setBusy(false); return; }
+    const days = (Date.parse(`${form.fecha_cierre}T00:00:00Z`) - Date.parse(`${form.fecha_inicio}T00:00:00Z`)) / 86400000;
+    if (days !== 98) { setError('La fecha de cierre debe estar exactamente 98 días después del inicio, en el mismo día de la semana.'); setBusy(false); return; }
     try { await api.post('/profesor/cuatrimestres', form); await quarters.reload(); setForm({ codigo: '', fecha_inicio: '', fecha_cierre: '' }); setMessage('Cuatrimestre creado.'); }
     catch (cause) { setError(cause.message); } finally { setBusy(false); }
   }
-  return <><SectionTitle eyebrow="Organización académica" title="Cuatrimestres" description="Defina las fechas que comparten los cursos del mismo cuatrimestre." />
+  return <><SectionTitle eyebrow="Organización académica" title="Cuatrimestres" description="Defina inicio y cierre separados por 98 días; se programarán quince sesiones semanales." />
     <div className="two-column"><section className="panel"><h3>Nuevo cuatrimestre</h3><form className="form-stack" onSubmit={submit}>
       <Field label="Código" hint="Formato N-AAAA, por ejemplo 2-2026"><input required pattern="[1-3]-[0-9]{4}" value={form.codigo} onChange={(e) => setForm({ ...form, codigo: e.target.value })} placeholder="2-2026" /></Field>
       <Field label="Fecha de inicio"><input required type="date" value={form.fecha_inicio} onChange={(e) => setForm({ ...form, fecha_inicio: e.target.value })} /></Field>
-      <Field label="Fecha de cierre"><input required type="date" value={form.fecha_cierre} onChange={(e) => setForm({ ...form, fecha_cierre: e.target.value })} /></Field>
+      <Field label="Fecha de cierre" hint="Debe ser 98 días después del inicio y caer el mismo día de la semana."><input required type="date" value={form.fecha_cierre} onChange={(e) => setForm({ ...form, fecha_cierre: e.target.value })} /></Field>
       <Feedback tone="error" message={error} /><Feedback tone="success" message={message} /><button className="button-primary" disabled={busy}>{busy ? 'Guardando…' : 'Crear cuatrimestre'}</button>
     </form></section><section className="panel"><h3>Cuatrimestres registrados</h3><ResourceView resource={quarters} empty="No hay cuatrimestres registrados.">{(items) => <div className="list-stack">{items.map((q) => <div className="list-item" key={q.id}><strong>{q.codigo}</strong><span>{q.fecha_inicio} — {q.fecha_cierre}</span></div>)}</div>}</ResourceView></section></div>
   </>;
